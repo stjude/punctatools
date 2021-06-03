@@ -1,0 +1,49 @@
+name: nup98_puncta
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.7
+  - ipykernel
+  - bokeh
+  - cudatoolkit=10.1
+  - dask
+  - ddt
+  - holoviews
+  - imageio
+  - intake
+  - intake-xarray
+  - javabridge
+  - jupyter==1.0.0
+  - jupyterlab
+  - matplotlib==3.2
+  - mrcfile
+  - natsort
+  - nibabel
+  - numba
+  - numcodecs
+  - numpy
+  - pandas
+  - pillow
+  - pydicom
+  - scikit-image
+  - seaborn
+  - simpleitk
+  - tifffile
+  - tqdm
+  - xarray
+  - xmltodict
+  - zarr
+  - pip
+  - pip:
+    - flywheel-cli
+    - flywheel-sdk
+    - imagecodecs
+    - memory-profiler
+    - pynrrd
+    - python-bioformats
+    - cellpose
+    - git+https://github.com/bhoeckendorf/pyklb.git@skbuild
+    - git+https://github.com/bhoeckendorf/intake_io.git@dbe9d92a97fd4541dddfe963f7c78b2e15daa874
+    - git+https://github.com/amedyukhina/am_utils.git@a461397bc937cd2b60bc7120d3b48d08753b35b1
+
