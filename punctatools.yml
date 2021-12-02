@@ -1,0 +1,12 @@
+name: punctatools
+channels:
+  - defaults
+dependencies:
+  - python>=3.7,<=3.9
+  - ipykernel
+  - pip
+  - pip:
+    - cellpose
+    - git+https://github.com/bhoeckendorf/pyklb.git@skbuild
+    - git+https://github.com/bhoeckendorf/intake_io.git@f0a8ce9
+
