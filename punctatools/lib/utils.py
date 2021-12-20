@@ -57,51 +57,93 @@ def load_parameters(variables, param_keys, param_matches):
     return kwargs
 
 
-def show_image_and_segmentation(ds, channel, segmentations,
+def show_image_and_nuclei(ds, channels, nuclei=None, figsize=None):
+    if figsize is None:
+        figsize = 5
+    chnames = ds['c'].data
+    imgs = [ds.loc[dict(c=chnames[channel])]['image'] for channel in channels]
+    if 'z' in ds.dims:
+        imgs = [img.max('z') for img in imgs]
+
+    cols = len(imgs)
+    if nuclei is not None:
+        cols += 1
+    if cols > 1:
+        fig, axs = plt.subplots(1, cols, figsize=(figsize * cols, figsize))
+        for i in range(len(imgs)):
+            plt.sca(axs[i])
+            plt.title(rf"puncta channel {i}")
+            io.imshow(imgs[i].data)
+        if nuclei is not None:
+            if len(nuclei.shape) > 2:
+                nuclei = nuclei.max(0)
+            plt.sca(axs[-1])
+            plt.title("nuclei")
+            io.imshow(nuclei)
+        plt.show()
+    else:
+        plt.figure(figsize=(figsize, figsize))
+        io.imshow(imgs[0].data)
+        plt.show()
+
+
+def show_image_and_segmentation(ds, channels, segmentations,
                                 wh=400, cmap='viridis', holoviews=False):
     chnames = ds['c'].data
-    img = ds.loc[dict(c=chnames[channel])]['image']
+    imgs = [ds.loc[dict(c=chnames[channel])]['image'] for channel in channels]
     if 'z' in ds.dims:
-        img = img.max('z')
+        imgs = [img.max('z') for img in imgs]
 
     if holoviews:
-        image = hv.Image(img, kdims=['x', 'y']).opts(width=wh, height=wh, cmap=cmap)
-        figure = image
-        for i, segm in enumerate(segmentations):
+        figure = None
+        for i in range(len(imgs)):
+            image = hv.Image(imgs[i], kdims=['x', 'y']).opts(width=wh, height=wh, cmap=cmap)
+            if figure is None:
+                figure = image.opts(title=rf"puncta channel {i}")
+            else:
+                figure += image.opts(title=rf"puncta channel {i}")
+            segm = segmentations[i]
             if len(segm.shape) > 2:
                 segm = segm.max(0)
-            segm_ds = img.copy()
-            segm_ds.data = segm * img.data.max() / segm.max()
-            figure += hv.Image(segm_ds, kdims=['x', 'y']).opts(width=wh, height=wh, cmap=cmap)
+            segm_ds = imgs[i].copy()
+            segm_ds.data = segm * imgs[i].data.max() / segm.max()
+            figure += hv.Image(segm_ds, kdims=['x', 'y']).opts(width=wh, height=wh, cmap=cmap).opts(
+                title=rf"puncta channel {i}, segmentation")
+
         return figure
     else:
-        if len(segmentations) > 0:
-            cols = len(segmentations) + 1
-            fig, axs = plt.subplots(1, cols, figsize=(5 * cols, 5))
-            plt.sca(axs[0])
-            io.imshow(img.data)
-            for i, segm in enumerate(segmentations):
-                plt.sca(axs[i + 1])
-                if len(segm.shape) > 2:
-                    segm = segm.max(0)
-                io.imshow(segm)
-            plt.show()
-        else:
-            plt.figure(figsize=(7, 7))
-            io.imshow(img.data)
-            plt.show()
+        cols = len(imgs) * 2
+        fig, axs = plt.subplots(1, cols, figsize=(5 * cols, 5))
+        for i in range(len(imgs)):
+            plt.sca(axs[i * 2])
+            plt.title(rf"puncta channel {i}")
+            io.imshow(imgs[i].data)
+
+            plt.sca(axs[2 * i + 1])
+            plt.title(rf"puncta channel {i}, segmentation")
+            segm = segmentations[i]
+            if len(segm.shape) > 2:
+                segm = segm.max(0)
+
+            io.imshow(segm)
 
 
-def display_blobs(ds, channel, logblobs, wh=400, cmap='viridis', holoviews=True):
-    img = ds['image'].loc[dict(c=ds['c'].data[channel])]
+def display_blobs(ds, channels, logblobs, wh=400, cmap='viridis', holoviews=True):
+    chnames = ds['c'].data
+    imgs = [ds.loc[dict(c=chnames[channel])]['image'] for channel in channels]
     if 'z' in ds.dims:
-        img = img.max('z')
+        imgs = [img.max('z') for img in imgs]
     spacing = intake_io.get_spacing(ds)
 
     if holoviews:
-        image = hv.Image(img, kdims=['x', 'y']).opts(width=wh, height=wh, cmap=cmap)
-        figure = image
-        for lgblobs in logblobs:
+        figure = None
+        for i in range(len(imgs)):
+            image = hv.Image(imgs[i], kdims=['x', 'y']).opts(width=wh, height=wh, cmap=cmap)
+            if figure is None:
+                figure = image.opts(title=rf"puncta channel {i}")
+            else:
+                figure += image.opts(title=rf"puncta channel {i}")
+            lgblobs = logblobs[i]
             if len(lgblobs) > 0:
                 lgblobs = lgblobs[:, -2:].copy()
                 blobs = pd.DataFrame(lgblobs, columns=['y', 'x'])
@@ -111,23 +153,27 @@ def display_blobs(ds, channel, logblobs, wh=400, cmap='viridis', holoviews=True)
                 pts = hv.Points(blobs, kdims=['x', 'y']).opts(width=wh, height=wh,
                                                               line_alpha=0.7, fill_alpha=0.0,
                                                               color='red', size=10)
-                figure += image * pts
+                figure += (image * pts).opts(title=rf"puncta channel {i}, blobs")
             else:
-                figure += image
+                figure += image.opts(title=rf"puncta channel {i}, blobs")
 
         return figure
     else:
-        cols = len(logblobs) + 1
+        cols = len(imgs) * 2
         fig, axs = plt.subplots(1, cols, figsize=(5 * cols, 5))
-        plt.sca(axs[0])
-        io.imshow(img.data)
-        for i, lgblobs in enumerate(logblobs):
-            lgblobs = lgblobs[:, -2:].copy()
+        for i in range(len(imgs)):
+            plt.sca(axs[i * 2])
+            plt.title(rf"puncta channel {i}")
+            io.imshow(imgs[i].data)
+            lgblobs = logblobs[i]
 
-            plt.sca(axs[i + 1])
-            io.imshow(img.data)
-            plt.sca(axs[i + 1])
-            plt.scatter(lgblobs[:, 1], lgblobs[:, 0], edgecolors='red', facecolors='none', s=40)
+            plt.sca(axs[2 * i + 1])
+            plt.title(rf"puncta channel {i}, blobs")
+            io.imshow(imgs[i].data)
+            if len(lgblobs) > 0:
+                lgblobs = lgblobs[:, -2:].copy()
+                plt.sca(axs[2 * i + 1])
+                plt.scatter(lgblobs[:, 1], lgblobs[:, 0], edgecolors='red', facecolors='none', s=40)
 
 
 def params_to_list(nchannels, *params):
