@@ -3,6 +3,7 @@ import os
 
 import holoviews as hv
 import intake_io
+import numpy as np
 import pandas as pd
 import pylab as plt
 from skimage import io
@@ -127,3 +128,26 @@ def display_blobs(ds, channel, logblobs, wh=400, cmap='viridis', holoviews=True)
             io.imshow(img.data)
             plt.sca(axs[i + 1])
             plt.scatter(lgblobs[:, 1], lgblobs[:, 0], edgecolors='red', facecolors='none', s=40)
+
+
+def params_to_list(nchannels, *params):
+    params = list(params)
+    for i in range(len(params)):
+        param = np.ravel(params[i])
+        if not len(param) == nchannels:
+            param = [param[0]] * nchannels
+        params[i] = param
+    return params
+
+
+def get_value_from_list(channel, *params):
+    params = list(params)
+    for i in range(len(params)):
+        params[i] = params[i][channel]
+    return params
+
+
+def convert_params(nchannels, channel, *params):
+    params = params_to_list(nchannels, *params)
+    params = get_value_from_list(channel, *params)
+    return params
