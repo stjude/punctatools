@@ -28,6 +28,7 @@ class TestSegmentation(unittest.TestCase):
         img = intake_io.imload(walk_dir(INPUT_DIR)[0])
         mask = segment_cells(img, channel=0, remove_small_mode='2D', do_3D=True)
         self.assertGreater(mask.max(), 0)
+        self.assertEqual(len(mask.shape), 3)
 
     @data(
         (0, 0.0003, True),

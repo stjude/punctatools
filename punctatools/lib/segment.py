@@ -26,7 +26,7 @@ def __get_images(dataset, do_3D, channel):
             raise ValueError("The image has multiples channels. Provide channel to segment.")
     else:
         imgs = dataset['image'].data
-    if 'z' not in dataset.dims or do_3D:
+    if 'z' not in dataset.dims:
         imgs = [imgs]
     if do_3D:
         spacing = intake_io.get_spacing(dataset)
@@ -36,8 +36,8 @@ def __get_images(dataset, do_3D, channel):
     return imgs, anisotropy
 
 
-def __reshape_output(masks, do_3D, dataset):
-    if do_3D or 'z' not in dataset.dims:
+def __reshape_output(masks, dataset):
+    if 'z' not in dataset.dims:
         masks = masks[0]
     else:
         masks = np.array(masks)
@@ -144,7 +144,7 @@ def segment_cells(dataset, channel=None, do_3D=False,
     masks, flows, styles, diams = model.eval(imgs, anisotropy=anisotropy,
                                              diameter=diameter, channels=channels,
                                              **cellpose_kwargs)
-    masks = __reshape_output(masks, do_3D, dataset)
+    masks = __reshape_output(masks, dataset)
     masks = __combine_3D(masks, do_3D, diameter,
                          remove_small_mode=remove_small_mode,
                          remove_small_diam_fraction=remove_small_diam_fraction,
