@@ -1,8 +1,9 @@
 from setuptools import setup
+import punctatools
 
 setup(
     name='punctatools',
-    version='0.0',
+    version=punctatools.__version__,
     author="Anna Medyukhina",
     author_email='anna.medyukhina@gmail.com',
     packages=['punctatools',
