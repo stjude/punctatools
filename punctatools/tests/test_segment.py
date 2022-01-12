@@ -68,10 +68,10 @@ class TestSegmentation(unittest.TestCase):
         puncta = segment_puncta(dataset, channel=1,
                                 cells=cells, minsize_um=0.2, maxsize_um=2, num_sigma=5,
                                 overlap=1, threshold_detection=0.001, threshold_background=0,
-                                threshold_segmentation=50, global_background=global_background,
+                                threshold_segmentation=0.0001, global_background=global_background,
                                 background_percentile=background_percentile,
                                 global_background_percentile=global_background_percentile,
-                                segmentation_mode=1,
+                                segmentation_mode=0,
                                 remove_out_of_cell=False)
         self.assertGreater(puncta.max(), 0)
 

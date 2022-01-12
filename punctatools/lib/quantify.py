@@ -133,6 +133,7 @@ def __summarize_puncta_stats(cell_stats, puncta_stats, puncta_channel):
 
         for col in ['puncta volume um', 'puncta volume pix', 'distance to nucleus border um']:
             colname = rf"average {puncta_channel} puncta {col} per nucleus"
+            colname = colname.replace('puncta puncta', 'puncta')
             if len(current_cell) > 0:
                 cell_stats.at[i, colname] = np.mean(current_cell[col])
             else:

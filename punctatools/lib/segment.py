@@ -64,7 +64,7 @@ def __combine_3D(masks, do_3D, diameter,
             minvol = 4. / 3 * np.pi * minrad ** 3
             masks = remove_small_objects(masks, min_size=minvol)
         elif remove_small_mode == '2D':
-            minarea = np.pi * minrad ** 2
+            minarea = np.pi * minrad ** 2 * np.shape(masks)[0]
             labels = remove_small_objects(labels, min_size=minarea)
             masks = masks * labels
         else:
@@ -133,8 +133,6 @@ def segment_cells(dataset, channel=None, do_3D=False,
     masks = np.ndarray or xr.Dataset
         Segmented image or input with segmented image
     """
-    if diameter is None:
-        diameter = 12 / intake_io.get_spacing(dataset)[-1]
     if channels is None:
         channels = [0, 0]
     imgs, anisotropy = __get_images(dataset, do_3D, channel)
@@ -145,6 +143,9 @@ def segment_cells(dataset, channel=None, do_3D=False,
                                              diameter=diameter, channels=channels,
                                              **cellpose_kwargs)
     masks = __reshape_output(masks, dataset)
+
+    if diameter is None:
+        diameter = 12 / intake_io.get_spacing(dataset)[-1]
     masks = __combine_3D(masks, do_3D, diameter,
                          remove_small_mode=remove_small_mode,
                          remove_small_diam_fraction=remove_small_diam_fraction,
@@ -289,13 +290,17 @@ def calculate_background_image(img, cells, global_background=True,
 
 
 def threshold_puncta(img, bg_img, cells, minsize_um, maxsize_um, num_sigma, spacing,
-                     segmentation_mode, threshold_segmentation):
+                     segmentation_mode, threshold_segmentation,
+                     global_background=True, global_background_percentile=95., background_percentile=50.):
     if segmentation_mode == 0:
         intensity_image = __filter_laplace(img, minsize_um, maxsize_um, num_sigma, spacing)
         bg_img = np.ones_like(bg_img)
     elif segmentation_mode == 1:
         intensity_image = __filter_laplace(img, minsize_um, maxsize_um, num_sigma, spacing)
-        bg_img = calculate_background_image(intensity_image, cells)
+        bg_img = calculate_background_image(intensity_image, cells,
+                                            global_background=global_background,
+                                            global_background_percentile=global_background_percentile,
+                                            background_percentile=background_percentile)
     elif segmentation_mode == 2:
         intensity_image = img
     else:
@@ -409,7 +414,8 @@ def segment_puncta(dataset, channel=None, cells=None, minsize_um=0.2, maxsize_um
 
     # segment puncta
     mask = threshold_puncta(img, bg_img, cells, minsize_um, maxsize_um, num_sigma, spacing,
-                            segmentation_mode, threshold_segmentation)
+                            segmentation_mode, threshold_segmentation,
+                            global_background, global_background_percentile, background_percentile)
 
     if remove_out_of_cell and cells is not None:
         mask = mask * (cells > 0)
