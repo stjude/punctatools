@@ -2,13 +2,28 @@
 
 ## Installation
 
-1. Install [anaconda](https://docs.anaconda.com/anaconda/install/)
+**Option 1:**
 
-2. Create a new conda environment from the provided yml file: `conda env create -f punctatools.yml`
+1. Download the latest version of the package
+2. cd into the package directory
+3. Install the package by running `pip install .`
+    
+You can install the punctatools into your base python environment, but we recommend creating 
+a new [anaconda](https://docs.anaconda.com/anaconda/install/) 
+or [mamba](https://github.com/mamba-org/mamba) environment. 
 
-3. Activate the installed environment: `conda activate punctatools`
+This installation should work with python versions 3.7-3.9.
 
-4. Download the current package and run `python setup.py install` from the package directory
+**Option 2:**
+
+Create a new conda environment with all dependencies from the provided yml file: 
+   
+`conda env create -f punctatools.yml`
+
+To overwrite an old environment with the same name, run the above command with the `--force` flag:
+
+`conda env create -f punctatools.yml --force`
+
 
 ## Usage
 

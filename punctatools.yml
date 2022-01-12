@@ -4,9 +4,20 @@ channels:
 dependencies:
   - python>=3.7,<=3.9
   - ipykernel
+  - scipy
+  - ddt
+  - pytest
+  - tqdm
+  - scikit-image
+  - pandas
+  - seaborn
+  - bokeh<2.5.0,>=2.4.0
+  - holoviews
+  - jupyter
   - pip
   - pip:
     - cellpose
-    - git+https://github.com/bhoeckendorf/pyklb.git@skbuild
-    - git+https://github.com/bhoeckendorf/intake_io.git@f0a8ce9
+    - git+https://github.com/amedyukhina/am_utils
+    - git+https://github.com/bhoeckendorf/intake_io.git@8089fa8
+    - git+https://github.com/stjude/punctatools.git
 
