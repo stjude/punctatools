@@ -64,7 +64,7 @@ def __combine_3D(masks, do_3D, diameter,
             minvol = 4. / 3 * np.pi * minrad ** 3
             masks = remove_small_objects(masks, min_size=minvol)
         elif remove_small_mode == '2D':
-            minarea = np.pi * minrad ** 2
+            minarea = np.pi * minrad ** 2 * np.shape(masks)[0]
             labels = remove_small_objects(labels, min_size=minarea)
             masks = masks * labels
         else:
@@ -133,8 +133,6 @@ def segment_cells(dataset, channel=None, do_3D=False,
     masks = np.ndarray or xr.Dataset
         Segmented image or input with segmented image
     """
-    if diameter is None:
-        diameter = 12 / intake_io.get_spacing(dataset)[-1]
     if channels is None:
         channels = [0, 0]
     imgs, anisotropy = __get_images(dataset, do_3D, channel)
@@ -145,6 +143,9 @@ def segment_cells(dataset, channel=None, do_3D=False,
                                              diameter=diameter, channels=channels,
                                              **cellpose_kwargs)
     masks = __reshape_output(masks, dataset)
+
+    if diameter is None:
+        diameter = 12 / intake_io.get_spacing(dataset)[-1]
     masks = __combine_3D(masks, do_3D, diameter,
                          remove_small_mode=remove_small_mode,
                          remove_small_diam_fraction=remove_small_diam_fraction,
