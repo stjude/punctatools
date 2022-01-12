@@ -1,8 +1,9 @@
 from setuptools import setup
+import punctatools
 
 setup(
     name='punctatools',
-    version='0.0',
+    version=punctatools.__version__,
     author="Anna Medyukhina",
     author_email='anna.medyukhina@gmail.com',
     packages=['punctatools',
@@ -14,6 +15,8 @@ setup(
     test_suite='punctatools.tests',
 
     install_requires=[
+        'cellpose',
+        'ipykernel',
         'scipy',
         'ddt',
         'pytest',
@@ -21,12 +24,10 @@ setup(
         'scikit-image',
         'pandas',
         'seaborn',
-        'am_utils',
         'bokeh<2.5.0,>=2.4.0',
         'holoviews',
-        'jupyter'
-    ],
-    dependency_links=[
-        "https://github.com/amedyukhina/am_utils/releases/",
+        'jupyter',
+        'am_utils @ git+https://github.com/amedyukhina/am_utils',
+        'intake_io @ git+https://github.com/bhoeckendorf/intake_io.git@8089fa8',
     ],
 )
