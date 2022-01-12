@@ -15,6 +15,8 @@ setup(
     test_suite='punctatools.tests',
 
     install_requires=[
+        'cellpose',
+        'ipykernel',
         'scipy',
         'ddt',
         'pytest',
@@ -22,12 +24,10 @@ setup(
         'scikit-image',
         'pandas',
         'seaborn',
-        'am_utils',
         'bokeh<2.5.0,>=2.4.0',
         'holoviews',
-        'jupyter'
-    ],
-    dependency_links=[
-        "https://github.com/amedyukhina/am_utils/releases/",
+        'jupyter',
+        'am_utils @ git+https://github.com/amedyukhina/am_utils',
+        'intake_io @ git+https://github.com/bhoeckendorf/intake_io.git@8089fa8',
     ],
 )
