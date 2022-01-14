@@ -105,7 +105,7 @@ def __add_entropy_stats(stats, channel_data, ind, cur_cell_pix, channel_name):
     return stats
 
 
-def __add_corelation_stats(stats, ind, channel_data1, channel_data2, cur_cell_pix, channel_names):
+def __add_correlation_stats(stats, ind, channel_data1, channel_data2, cur_cell_pix, channel_names):
     mi = mutual_information_2d(channel_data1[cur_cell_pix],
                                channel_data2[cur_cell_pix],
                                bins=max([channel_data1[cur_cell_pix].max(),
@@ -203,8 +203,8 @@ def quantify(dataset, channel_names, puncta_channels):
             cell_stats = __add_entropy_stats(cell_stats, imgs[i], ind, cur_cell_pix, channel_names[i])
 
             for j in range(i + 1, len(channel_names)):
-                cell_stats = __add_corelation_stats(cell_stats, ind, imgs[i], imgs[j], cur_cell_pix,
-                                                    [channel_names[i], channel_names[j]])
+                cell_stats = __add_correlation_stats(cell_stats, ind, imgs[i], imgs[j], cur_cell_pix,
+                                                     [channel_names[i], channel_names[j]])
 
     # quantify puncta
     dist_to_border = ndimage.morphology.distance_transform_edt(cells > 0, sampling=spacing)
