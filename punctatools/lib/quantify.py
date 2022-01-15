@@ -118,6 +118,13 @@ def __add_correlation_stats(stats, ind, channel_data1, channel_data2, cur_cell_p
     return stats
 
 
+def __add_coloc_stats(stats, ind, cur_cell_pix, overlap, union, chname):
+    coloc = np.sum((overlap[cur_cell_pix] > 0)*1) / np.sum(union[cur_cell_pix])
+
+    stats.at[ind, 'Overlap coefficient ' + chname] = coloc
+    return stats
+
+
 def __add_cell_label(stats, cells):
     if 'z' in stats.columns:
         coords = np.int_(np.round_(stats[['z', 'y', 'x']].values))
@@ -197,7 +204,19 @@ def quantify(dataset, channel_names, puncta_channels):
     for i in range(len(channel_names)):
         cell_stats = __add_intensity_stats(cell_stats, imgs[i], cells, channel_names[i], 'cell')
 
-    # compute entropy and correlations of all channels per cell
+    # calculate colocalized puncta
+    n = len(puncta_channels)
+    p_union = []
+    for pi1 in range(n):
+        for pi2 in range(pi1+1, n):
+            p_intersect = puncta[pi1].astype(np.int64) * puncta[pi2].astype(np.int64)
+            p_intersect = relabel_sequential(p_intersect)[0]
+            puncta = np.concatenate([puncta, np.expand_dims(p_intersect, 0)], axis=0)
+            puncta_channels = np.concatenate([puncta_channels,
+                                              np.array([rf"{puncta_channels[pi1]}_{puncta_channels[pi2]}_coloc"])])
+            p_union.append(((puncta[pi1] + puncta[pi2]) > 0) * 1)
+
+    # compute entropy, colocalization and correlations of all channels per cell
     for ind in range(len(cell_stats)):
         cur_cell_pix = np.where(cells == cell_stats['cell label'].iloc[ind])
         for i in range(len(channel_names)):
@@ -207,15 +226,9 @@ def quantify(dataset, channel_names, puncta_channels):
                 cell_stats = __add_correlation_stats(cell_stats, ind, imgs[i], imgs[j], cur_cell_pix,
                                                      [channel_names[i], channel_names[j]])
 
-    # calculate colocalized puncta
-    n = len(puncta_channels)
-    for pi1 in range(n):
-        for pi2 in range(pi1+1, n):
-            p_intersect = puncta[pi1].astype(np.int64) * puncta[pi2].astype(np.int64)
-            p_intersect = relabel_sequential(p_intersect)[0]
-            puncta = np.concatenate([puncta, np.expand_dims(p_intersect, 0)], axis=0)
-            puncta_channels = np.concatenate([puncta_channels,
-                                              np.array([rf"{puncta_channels[pi1]}_{puncta_channels[pi2]}_coloc"])])
+        for i in range(len(p_union)):
+            cell_stats = __add_coloc_stats(cell_stats, ind, cur_cell_pix,
+                                           puncta[n+i], p_union[i], puncta_channels[n+i])
 
     # quantify puncta
     dist_to_border = ndimage.morphology.distance_transform_edt(cells > 0, sampling=spacing)
