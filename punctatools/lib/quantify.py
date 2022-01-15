@@ -8,6 +8,7 @@ from am_utils.utils import walk_dir, combine_statistics
 from scipy import ndimage
 from scipy.stats import entropy
 from skimage.measure import regionprops_table
+from skimage.segmentation import relabel_sequential
 from tqdm import tqdm
 
 EPS = np.finfo(float).eps
@@ -205,6 +206,16 @@ def quantify(dataset, channel_names, puncta_channels):
             for j in range(i + 1, len(channel_names)):
                 cell_stats = __add_correlation_stats(cell_stats, ind, imgs[i], imgs[j], cur_cell_pix,
                                                      [channel_names[i], channel_names[j]])
+
+    # calculate colocalized puncta
+    n = len(puncta_channels)
+    for pi1 in range(n):
+        for pi2 in range(pi1+1, n):
+            p_intersect = puncta[pi1].astype(np.int64) * puncta[pi2].astype(np.int64)
+            p_intersect = relabel_sequential(p_intersect)[0]
+            puncta = np.concatenate([puncta, np.expand_dims(p_intersect, 0)], axis=0)
+            puncta_channels = np.concatenate([puncta_channels,
+                                              np.array([rf"{puncta_channels[pi1]}_{puncta_channels[pi2]}_coloc"])])
 
     # quantify puncta
     dist_to_border = ndimage.morphology.distance_transform_edt(cells > 0, sampling=spacing)
