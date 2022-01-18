@@ -31,10 +31,18 @@ To overwrite an old environment with the same name, run the above command with t
 
 - If your dataset is organized in a way that all channels and z-layers belonging to the same image 
   are combined in one file (e.g. multi-page tiff, or raw microscopy format), and one file corresponds
-  to one image, go to step 2.
+  to one image, you may skip this step and go directly to step 2. 
+  Make sure that the pixel size and z-spacing are included in the metadata 
+  of the image files: this information will later be used during 
+  quantification to determine volumes of cells and puncta.
   
-- If your dataset has multiple images per file, e.g. multiple time points, split the images with 
-  [Fiji](https://imagej.net/software/fiji/) into individual images.
+- If your dataset contains multiple positions or time points per file 
+  (e.g., the Slidebook format), split the file into individual positions, e.g. using the provided 
+  Fiji macro: [scripts/export_multipage.ijm](scripts/export_multipage.ijm). 
+  Open the macro in [Fiji](https://imagej.net/software/fiji/) and run it. 
+  When prompted, select the input directory with the images to convert, 
+  and the output directory to save the results (the output directory will need to be 
+  created beforehand).
   
 - If you have channels and/or z-layers as individual files, combine the images to stacks
   with the provided conversion notebooks:
