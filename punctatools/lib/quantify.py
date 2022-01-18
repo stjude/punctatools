@@ -6,7 +6,7 @@ import pandas as pd
 from am_utils.parallel import run_parallel
 from am_utils.utils import walk_dir, combine_statistics
 from scipy import ndimage
-from scipy.stats import entropy
+from scipy.stats import entropy, pearsonr
 from skimage.measure import regionprops_table
 from skimage.segmentation import relabel_sequential
 from tqdm import tqdm
@@ -111,10 +111,11 @@ def __add_correlation_stats(stats, ind, channel_data1, channel_data2, cur_cell_p
                                channel_data2[cur_cell_pix],
                                bins=max([channel_data1[cur_cell_pix].max(),
                                          channel_data2[cur_cell_pix].max()]))
-    corr = np.corrcoef(channel_data1[cur_cell_pix] * 1., channel_data2[cur_cell_pix] * 1.)[0, 1]
+    corr, pval = pearsonr(channel_data1[cur_cell_pix] * 1., channel_data2[cur_cell_pix] * 1.)
 
     stats.at[ind, 'Mutual information ' + channel_names[0] + ' vs ' + channel_names[1]] = mi
-    stats.at[ind, 'Pearson correlation ' + channel_names[0] + ' vs ' + channel_names[1]] = corr
+    stats.at[ind, 'Pearson correlation coefficient ' + channel_names[0] + ' vs ' + channel_names[1]] = corr
+    stats.at[ind, 'Pearson correlation p value ' + channel_names[0] + ' vs ' + channel_names[1]] = pval
     return stats
 
 
