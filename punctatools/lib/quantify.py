@@ -6,8 +6,9 @@ import pandas as pd
 from am_utils.parallel import run_parallel
 from am_utils.utils import walk_dir, combine_statistics
 from scipy import ndimage
-from scipy.stats import entropy
+from scipy.stats import entropy, pearsonr
 from skimage.measure import regionprops_table
+from skimage.segmentation import relabel_sequential
 from tqdm import tqdm
 
 EPS = np.finfo(float).eps
@@ -105,15 +106,24 @@ def __add_entropy_stats(stats, channel_data, ind, cur_cell_pix, channel_name):
     return stats
 
 
-def __add_corelation_stats(stats, ind, channel_data1, channel_data2, cur_cell_pix, channel_names):
-    mi = mutual_information_2d(channel_data1[cur_cell_pix],
-                               channel_data2[cur_cell_pix],
-                               bins=max([channel_data1[cur_cell_pix].max(),
-                                         channel_data2[cur_cell_pix].max()]))
-    corr = np.corrcoef(channel_data1[cur_cell_pix] * 1., channel_data2[cur_cell_pix] * 1.)[0, 1]
+def __add_correlation_stats(stats, ind, channel_data1, channel_data2, cur_cell_pix, channel_names):
+    if len(channel_data1[cur_cell_pix]) >= 2:
+        mi = mutual_information_2d(channel_data1[cur_cell_pix],
+                                   channel_data2[cur_cell_pix],
+                                   bins=max([channel_data1[cur_cell_pix].max(),
+                                             channel_data2[cur_cell_pix].max()]))
+        corr, pval = pearsonr(channel_data1[cur_cell_pix] * 1., channel_data2[cur_cell_pix] * 1.)
 
-    stats.at[ind, 'Mutual information ' + channel_names[0] + ' vs ' + channel_names[1]] = mi
-    stats.at[ind, 'Pearson correlation ' + channel_names[0] + ' vs ' + channel_names[1]] = corr
+        stats.at[ind, 'Mutual information ' + channel_names[0] + ' vs ' + channel_names[1]] = mi
+        stats.at[ind, 'Pearson correlation coefficient ' + channel_names[0] + ' vs ' + channel_names[1]] = corr
+        stats.at[ind, 'Pearson correlation p value ' + channel_names[0] + ' vs ' + channel_names[1]] = pval
+    return stats
+
+
+def __add_coloc_stats(stats, ind, cur_cell_pix, overlap, union, chname):
+    coloc = np.sum((overlap[cur_cell_pix] > 0)*1) / np.sum(union[cur_cell_pix])
+
+    stats.at[ind, 'Overlap coefficient ' + chname] = coloc
     return stats
 
 
@@ -197,15 +207,31 @@ def quantify(dataset, channel_names, puncta_channels):
     for i in range(len(channel_names)):
         cell_stats = __add_intensity_stats(cell_stats, imgs[i], cells, channel_names[i], 'cell')
 
-    # compute entropy and correlations of all channels per cell
+    # calculate colocalized puncta
+    n = len(puncta_channels)
+    p_union = []
+    for pi1 in range(n):
+        for pi2 in range(pi1+1, n):
+            p_intersect = puncta[pi1].astype(np.int64) * puncta[pi2].astype(np.int64)
+            p_intersect = relabel_sequential(p_intersect)[0]
+            puncta = np.concatenate([puncta, np.expand_dims(p_intersect, 0)], axis=0)
+            puncta_channels = np.concatenate([puncta_channels,
+                                              np.array([rf"{puncta_channels[pi1]}_{puncta_channels[pi2]}_coloc"])])
+            p_union.append(((puncta[pi1] + puncta[pi2]) > 0) * 1)
+
+    # compute entropy, colocalization and correlations of all channels per cell
     for ind in range(len(cell_stats)):
         cur_cell_pix = np.where(cells == cell_stats['cell label'].iloc[ind])
         for i in range(len(channel_names)):
             cell_stats = __add_entropy_stats(cell_stats, imgs[i], ind, cur_cell_pix, channel_names[i])
 
             for j in range(i + 1, len(channel_names)):
-                cell_stats = __add_corelation_stats(cell_stats, ind, imgs[i], imgs[j], cur_cell_pix,
-                                                    [channel_names[i], channel_names[j]])
+                cell_stats = __add_correlation_stats(cell_stats, ind, imgs[i], imgs[j], cur_cell_pix,
+                                                     [channel_names[i], channel_names[j]])
+
+        for i in range(len(p_union)):
+            cell_stats = __add_coloc_stats(cell_stats, ind, cur_cell_pix,
+                                           puncta[n+i], p_union[i], puncta_channels[n+i])
 
     # quantify puncta
     dist_to_border = ndimage.morphology.distance_transform_edt(cells > 0, sampling=spacing)
@@ -229,6 +255,15 @@ def quantify(dataset, channel_names, puncta_channels):
             cell_stats = __total_intensities_in_out_puncta_per_cell(cell_stats, cells, puncta[p_i],
                                                                     puncta_channels[p_i], imgs[i],
                                                                     channel_names[i])
+
+        # compute correlations of all channels per puncta
+        for ind in range(len(puncta_stats)):
+            cur_puncta_pix = np.where(puncta[p_i] == puncta_stats['puncta label'].iloc[ind])
+            for i in range(len(channel_names)):
+                for j in range(i + 1, len(channel_names)):
+                    puncta_stats = __add_correlation_stats(puncta_stats, ind, imgs[i], imgs[j], cur_puncta_pix,
+                                                           [channel_names[i], channel_names[j]])
+
         # combine puncta stats from all channels
         puncta_stats['channel'] = puncta_channels[p_i]
         puncta_stats_all = pd.concat([puncta_stats_all, puncta_stats], ignore_index=True)
