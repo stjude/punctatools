@@ -27,7 +27,7 @@ setup(
         'bokeh<2.5.0,>=2.4.0',
         'holoviews',
         'jupyter',
-        'am_utils @ git+https://github.com/amedyukhina/am_utils',
-        'intake_io @ git+https://github.com/bhoeckendorf/intake_io.git@8089fa8',
+        'am_utils @ git+https://github.com/amedyukhina/am_utils.git',
+        'intake_io @ git+https://github.com/bhoeckendorf/intake_io.git@v0.0.2',
     ],
 )

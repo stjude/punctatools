@@ -17,7 +17,7 @@ dependencies:
   - pip
   - pip:
     - cellpose
-    - git+https://github.com/amedyukhina/am_utils
-    - git+https://github.com/bhoeckendorf/intake_io.git@8089fa8
+    - git+https://github.com/amedyukhina/am_utils.git
+    - git+https://github.com/bhoeckendorf/intake_io.git@v0.0.2
     - git+https://github.com/stjude/punctatools.git
 
