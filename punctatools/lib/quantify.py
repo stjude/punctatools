@@ -107,15 +107,16 @@ def __add_entropy_stats(stats, channel_data, ind, cur_cell_pix, channel_name):
 
 
 def __add_correlation_stats(stats, ind, channel_data1, channel_data2, cur_cell_pix, channel_names):
-    mi = mutual_information_2d(channel_data1[cur_cell_pix],
-                               channel_data2[cur_cell_pix],
-                               bins=max([channel_data1[cur_cell_pix].max(),
-                                         channel_data2[cur_cell_pix].max()]))
-    corr, pval = pearsonr(channel_data1[cur_cell_pix] * 1., channel_data2[cur_cell_pix] * 1.)
+    if len(channel_data1[cur_cell_pix]) >= 2:
+        mi = mutual_information_2d(channel_data1[cur_cell_pix],
+                                   channel_data2[cur_cell_pix],
+                                   bins=max([channel_data1[cur_cell_pix].max(),
+                                             channel_data2[cur_cell_pix].max()]))
+        corr, pval = pearsonr(channel_data1[cur_cell_pix] * 1., channel_data2[cur_cell_pix] * 1.)
 
-    stats.at[ind, 'Mutual information ' + channel_names[0] + ' vs ' + channel_names[1]] = mi
-    stats.at[ind, 'Pearson correlation coefficient ' + channel_names[0] + ' vs ' + channel_names[1]] = corr
-    stats.at[ind, 'Pearson correlation p value ' + channel_names[0] + ' vs ' + channel_names[1]] = pval
+        stats.at[ind, 'Mutual information ' + channel_names[0] + ' vs ' + channel_names[1]] = mi
+        stats.at[ind, 'Pearson correlation coefficient ' + channel_names[0] + ' vs ' + channel_names[1]] = corr
+        stats.at[ind, 'Pearson correlation p value ' + channel_names[0] + ' vs ' + channel_names[1]] = pval
     return stats
 
 
@@ -253,6 +254,15 @@ def quantify(dataset, channel_names, puncta_channels):
             cell_stats = __total_intensities_in_out_puncta_per_cell(cell_stats, cells, puncta[p_i],
                                                                     puncta_channels[p_i], imgs[i],
                                                                     channel_names[i])
+
+        # compute correlations of all channels per puncta
+        for ind in range(len(puncta_stats)):
+            cur_puncta_pix = np.where(puncta[p_i] == puncta_stats['puncta label'].iloc[ind])
+            for i in range(len(channel_names)):
+                for j in range(i + 1, len(channel_names)):
+                    puncta_stats = __add_correlation_stats(puncta_stats, ind, imgs[i], imgs[j], cur_puncta_pix,
+                                                           [channel_names[i], channel_names[j]])
+
         # combine puncta stats from all channels
         puncta_stats['channel'] = puncta_channels[p_i]
         puncta_stats_all = pd.concat([puncta_stats_all, puncta_stats], ignore_index=True)
