@@ -64,7 +64,7 @@ def __combine_3D(masks, do_3D, diameter,
             minvol = 4. / 3 * np.pi * minrad ** 3
             masks = remove_small_objects(masks, min_size=minvol)
         elif remove_small_mode == '2D':
-            minarea = np.pi * minrad ** 2 * np.shape(masks)[0]
+            minarea = np.pi * minrad ** 2
             labels = remove_small_objects(labels, min_size=minarea)
             masks = masks * labels
         else:
