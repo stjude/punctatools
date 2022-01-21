@@ -31,13 +31,14 @@ def __get_images(dataset, do_3D, channel):
     if do_3D:
         spacing = intake_io.get_spacing(dataset)
         anisotropy = spacing[0] / spacing[-1]
+        imgs = [imgs]
     else:
         anisotropy = None
     return imgs, anisotropy
 
 
-def __reshape_output(masks, dataset):
-    if 'z' not in dataset.dims:
+def __reshape_output(masks, dataset, do_3D):
+    if 'z' not in dataset.dims or do_3D:
         masks = masks[0]
     else:
         masks = np.array(masks)
@@ -143,7 +144,7 @@ def segment_cells(dataset, channel=None, do_3D=False,
                                              diameter=diameter, channels=channels,
                                              do_3D=do_3D,
                                              **cellpose_kwargs)
-    masks = __reshape_output(masks, dataset)
+    masks = __reshape_output(masks, dataset, do_3D)
 
     if diameter is None:
         diameter = 12 / intake_io.get_spacing(dataset)[-1]
