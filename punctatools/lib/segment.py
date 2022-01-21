@@ -141,6 +141,7 @@ def segment_cells(dataset, channel=None, do_3D=False,
     model = models.Cellpose(gpu=gpu, model_type=model_type)
     masks, flows, styles, diams = model.eval(imgs, anisotropy=anisotropy,
                                              diameter=diameter, channels=channels,
+                                             do_3D=do_3D,
                                              **cellpose_kwargs)
     masks = __reshape_output(masks, dataset)
 
