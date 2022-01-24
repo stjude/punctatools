@@ -6,7 +6,7 @@ import intake_io
 from am_utils.utils import walk_dir
 from ddt import ddt, data
 
-from ..lib.segment import segment_cells, segment_puncta, segment_puncta_batch
+from ..lib.segment import segment_roi, segment_puncta, segment_puncta_batch
 
 INPUT_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../example_data/stacks'
 
@@ -14,19 +14,19 @@ INPUT_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../example_data/st
 @ddt
 class TestSegmentation(unittest.TestCase):
 
-    def test_segment_cells(self):
+    def test_segment_roi(self):
         img = intake_io.imload(walk_dir(INPUT_DIR)[0])
-        mask = segment_cells(img, channel=0, remove_small_mode='2D')
+        mask = segment_roi(img, channel=0, remove_small_mode='2D')
         self.assertGreater(mask.max(), 0)
 
-    def test_segment_cells_clear_border(self):
+    def test_segment_roi_clear_border(self):
         img = intake_io.imload(walk_dir(INPUT_DIR)[0])
-        mask = segment_cells(img, channel=0, remove_small_mode='2D', clear_border=True)
+        mask = segment_roi(img, channel=0, remove_small_mode='2D', clear_border=True)
         self.assertGreater(mask.max(), 0)
 
-    def test_segment_cells_3D(self):
+    def test_segment_roi_3D(self):
         img = intake_io.imload(walk_dir(INPUT_DIR)[0])
-        mask = segment_cells(img, channel=0, remove_small_mode='2D', do_3D=True, gpu=False)
+        mask = segment_roi(img, channel=0, remove_small_mode='2D', do_3D=True, gpu=False)
         self.assertGreater(mask.max(), 0)
         self.assertEqual(len(mask.shape), 3)
 
@@ -42,15 +42,15 @@ class TestSegmentation(unittest.TestCase):
         segmentation_mode, threshold_segmentation, with_cells = case
         dataset = intake_io.imload(walk_dir(INPUT_DIR)[0])
         if with_cells:
-            cells = segment_cells(dataset, channel=0, remove_small_mode='2D')
+            roi = segment_roi(dataset, channel=0, remove_small_mode='2D')
         else:
-            cells = None
+            roi = None
         puncta = segment_puncta(dataset, channel=1,
-                                cells=cells, minsize_um=0.2, maxsize_um=2, num_sigma=5,
+                                roi=roi, minsize_um=0.2, maxsize_um=2, num_sigma=5,
                                 overlap=1, threshold_detection=0.001, threshold_background=0,
                                 threshold_segmentation=threshold_segmentation, global_background=False,
                                 segmentation_mode=segmentation_mode, maxrad_um=6,
-                                remove_out_of_cell=False)
+                                remove_out_of_roi=False)
         self.assertGreater(puncta.max(), 0)
 
     @data(
@@ -64,15 +64,15 @@ class TestSegmentation(unittest.TestCase):
     def test_background_filtering(self, case):
         global_background_percentile, background_percentile, global_background = case
         dataset = intake_io.imload(walk_dir(INPUT_DIR)[0])
-        cells = segment_cells(dataset, channel=0, remove_small_mode='2D')
+        roi = segment_roi(dataset, channel=0, remove_small_mode='2D')
         puncta = segment_puncta(dataset, channel=1,
-                                cells=cells, minsize_um=0.2, maxsize_um=2, num_sigma=5,
+                                roi=roi, minsize_um=0.2, maxsize_um=2, num_sigma=5,
                                 overlap=1, threshold_detection=0.001, threshold_background=0,
                                 threshold_segmentation=0.0001, global_background=global_background,
                                 background_percentile=background_percentile,
                                 global_background_percentile=global_background_percentile,
                                 segmentation_mode=0,
-                                remove_out_of_cell=False)
+                                remove_out_of_roi=False)
         self.assertGreater(puncta.max(), 0)
 
     def test_segment_puncta_batch(self):
