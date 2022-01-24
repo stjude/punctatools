@@ -6,6 +6,7 @@ import intake_io
 import numpy as np
 import pandas as pd
 import pylab as plt
+from cellpose import plot
 from skimage import io
 
 
@@ -197,3 +198,33 @@ def convert_params(nchannels, channel, *params):
     params = params_to_list(nchannels, *params)
     params = get_value_from_list(channel, *params)
     return params
+
+
+def display_roi_segmentation_results(masks, flows, dataset, channel, chnames, nimg=5):
+    if 'c' in dataset.dims:
+        imgs = dataset.loc[dict(c=chnames[channel])]['image'].data
+    else:
+        imgs = dataset['image'].data
+
+    if 'z' not in dataset.dims:
+        imgs = [imgs]
+        masks = [masks]
+
+    if len(imgs) > nimg:
+        ind0 = int(len(imgs) / 2)
+        ind = np.arange(ind0 - int(nimg / 2), ind0 + (nimg - int(nimg / 2)))
+    else:
+        ind = np.arange(len(imgs))
+
+    for i in ind:
+        maski = masks[i]
+        flowi = flows[i][0]
+        img = imgs[i]
+        fig = plt.figure(figsize=(30, 10))
+        if len(img.shape) > 2:
+            img = img[int(img.shape[0] / 2)]
+            maski = maski[int(maski.shape[0] / 2)]
+            flowi = flowi[int(flowi.shape[0] / 2)]
+        plot.show_segmentation(fig, img, maski, flowi, channels=[0, 0])
+        plt.tight_layout()
+        plt.show()
