@@ -132,17 +132,17 @@ def __add_cell_label(stats, cells):
         coords = np.int_(np.round_(stats[['z', 'y', 'x']].values))
     else:
         coords = np.int_(np.round_(stats[['y', 'x']].values))
-    stats['cell_label'] = cells[tuple(coords.transpose())]
+    stats['ROI label'] = cells[tuple(coords.transpose())]
     return stats
 
 
 def __summarize_puncta_stats(cell_stats, puncta_stats, puncta_channel):
     for i in range(len(cell_stats)):
-        current_cell = puncta_stats[puncta_stats['cell_label'] == cell_stats['cell label'].iloc[i]]
+        current_cell = puncta_stats[puncta_stats['ROI label'] == cell_stats['ROI label'].iloc[i]]
         cell_stats.at[i, rf'number of {puncta_channel} puncta'] = len(current_cell)
 
-        for col in ['puncta volume um', 'puncta volume pix', 'distance to nucleus border um']:
-            colname = rf"average {puncta_channel} puncta {col} per nucleus"
+        for col in ['puncta volume um', 'puncta volume pix', 'distance to ROI border um']:
+            colname = rf"average {puncta_channel} puncta {col} per ROI"
             colname = colname.replace('puncta puncta', 'puncta')
             if len(current_cell) > 0:
                 cell_stats.at[i, colname] = np.mean(current_cell[col])
@@ -150,7 +150,8 @@ def __summarize_puncta_stats(cell_stats, puncta_stats, puncta_channel):
                 cell_stats.at[i, colname] = 0
 
         for col in ['puncta volume um', 'puncta volume pix']:
-            colname = rf"total {puncta_channel} puncta {col} per nucleus"
+            colname = rf"total {puncta_channel} puncta {col} per ROI"
+            colname = colname.replace('puncta puncta', 'puncta')
             if len(current_cell) > 0:
                 cell_stats.at[i, colname] = np.sum(current_cell[col])
             else:
@@ -164,7 +165,7 @@ def __total_intensities_in_out_puncta_per_cell(cell_stats, cells, puncta, puncta
         intensity_stats = regionprops_table(label_image=label_img,
                                             intensity_image=channel_data,
                                             properties=['label', 'area', 'mean_intensity'])
-        ind = cell_stats[cell_stats['cell label'].isin(intensity_stats['label'])].index
+        ind = cell_stats[cell_stats['ROI label'].isin(intensity_stats['label'])].index
 
         cell_stats.at[ind, channel + ' mean intensity ' + location] = intensity_stats['mean_intensity']
         cell_stats.at[ind, channel + ' integrated intensity ' +
@@ -201,11 +202,11 @@ def quantify(dataset, channel_names, puncta_channels):
     imgs, cells, puncta = __get_data(dataset, channel_names, puncta_channels)
 
     # compute cell volume and positions
-    cell_stats = __compute_volume_and_position(cells, spacing, 'cell')
+    cell_stats = __compute_volume_and_position(cells, spacing, 'ROI')
 
     # compute intensities of all channels per cell
     for i in range(len(channel_names)):
-        cell_stats = __add_intensity_stats(cell_stats, imgs[i], cells, channel_names[i], 'cell')
+        cell_stats = __add_intensity_stats(cell_stats, imgs[i], cells, channel_names[i], 'ROI')
 
     # calculate colocalized puncta
     n = len(puncta_channels)
@@ -221,7 +222,7 @@ def quantify(dataset, channel_names, puncta_channels):
 
     # compute entropy, colocalization and correlations of all channels per cell
     for ind in range(len(cell_stats)):
-        cur_cell_pix = np.where(cells == cell_stats['cell label'].iloc[ind])
+        cur_cell_pix = np.where(cells == cell_stats['ROI label'].iloc[ind])
         for i in range(len(channel_names)):
             cell_stats = __add_entropy_stats(cell_stats, imgs[i], ind, cur_cell_pix, channel_names[i])
 
@@ -239,7 +240,7 @@ def quantify(dataset, channel_names, puncta_channels):
     for p_i in range(len(puncta_channels)):
         # compute volume and positions of puncta
         puncta_stats = __compute_volume_and_position(puncta[p_i], spacing, 'puncta',
-                                                     img=dist_to_border, img_name='distance to nucleus border um')
+                                                     img=dist_to_border, img_name='distance to ROI border um')
         puncta_stats = __add_cell_label(puncta_stats, cells)
 
         # compute intensities of all channels per puncta
