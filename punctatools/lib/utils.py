@@ -1,10 +1,9 @@
 import json
 import os
+import warnings
 
-import holoviews as hv
 import intake_io
 import numpy as np
-import pandas as pd
 import pylab as plt
 from cellpose import plot
 from skimage import io
@@ -101,126 +100,7 @@ def crop_dataset(dataset, x, y, z, width, height, depth):
     return ds_crop
 
 
-def show_image_and_nuclei(ds, channels, nuclei=None, figsize=None):
-    if figsize is None:
-        figsize = 5
-    chnames = ds['c'].data
-    imgs = [ds.loc[dict(c=chnames[channel])]['image'] for channel in channels]
-    if 'z' in ds.dims:
-        imgs = [img.max('z') for img in imgs]
-
-    cols = len(imgs)
-    if nuclei is not None:
-        cols += 1
-    if cols > 1:
-        fig, axs = plt.subplots(1, cols, figsize=(figsize * cols, figsize))
-        for i in range(len(imgs)):
-            plt.sca(axs[i])
-            plt.title(rf"puncta channel {i}")
-            io.imshow(imgs[i].data)
-        if nuclei is not None:
-            if len(nuclei.shape) > 2:
-                nuclei = nuclei.max(0)
-            plt.sca(axs[-1])
-            plt.title("nuclei")
-            io.imshow(nuclei)
-        plt.show()
-    else:
-        plt.figure(figsize=(figsize, figsize))
-        io.imshow(imgs[0].data)
-        plt.show()
-
-
-def show_image_and_segmentation(ds, channels, segmentations,
-                                wh=400, cmap='viridis', holoviews=False):
-    chnames = ds['c'].data
-    imgs = [ds.loc[dict(c=chnames[channel])]['image'] for channel in channels]
-    if 'z' in ds.dims:
-        imgs = [img.max('z') for img in imgs]
-
-    if holoviews:
-        figure = None
-        for i in range(len(imgs)):
-            image = hv.Image(imgs[i], kdims=['x', 'y']).opts(width=wh, height=wh, cmap=cmap)
-            if figure is None:
-                figure = image.opts(title=rf"puncta channel {i}")
-            else:
-                figure += image.opts(title=rf"puncta channel {i}")
-            segm = segmentations[i]
-            if len(segm.shape) > 2:
-                segm = segm.max(0)
-            segm_ds = imgs[i].copy()
-            segm_ds.data = segm * imgs[i].data.max() / segm.max()
-            figure += hv.Image(segm_ds, kdims=['x', 'y']).opts(width=wh, height=wh, cmap=cmap).opts(
-                title=rf"puncta channel {i}, segmentation")
-
-        return figure
-    else:
-        cols = len(imgs) * 2
-        fig, axs = plt.subplots(1, cols, figsize=(5 * cols, 5))
-        for i in range(len(imgs)):
-            plt.sca(axs[i * 2])
-            plt.title(rf"puncta channel {i}")
-            io.imshow(imgs[i].data)
-
-            plt.sca(axs[2 * i + 1])
-            plt.title(rf"puncta channel {i}, segmentation")
-            segm = segmentations[i]
-            if len(segm.shape) > 2:
-                segm = segm.max(0)
-
-            io.imshow(segm)
-
-
-def display_blobs(ds, channels, logblobs, wh=400, cmap='viridis', holoviews=True):
-    chnames = ds['c'].data
-    imgs = [ds.loc[dict(c=chnames[channel])]['image'] for channel in channels]
-    if 'z' in ds.dims:
-        imgs = [img.max('z') for img in imgs]
-    spacing = intake_io.get_spacing(ds)
-
-    if holoviews:
-        figure = None
-        for i in range(len(imgs)):
-            image = hv.Image(imgs[i], kdims=['x', 'y']).opts(width=wh, height=wh, cmap=cmap)
-            if figure is None:
-                figure = image.opts(title=rf"puncta channel {i}")
-            else:
-                figure += image.opts(title=rf"puncta channel {i}")
-            lgblobs = logblobs[i]
-            if len(lgblobs) > 0:
-                lgblobs = lgblobs[:, -2:].copy()
-                blobs = pd.DataFrame(lgblobs, columns=['y', 'x'])
-                blobs['x'] = blobs['x'] * spacing[-1]
-                blobs['y'] = blobs['y'] * spacing[-2]
-
-                pts = hv.Points(blobs, kdims=['x', 'y']).opts(width=wh, height=wh,
-                                                              line_alpha=0.7, fill_alpha=0.0,
-                                                              color='red', size=10)
-                figure += (image * pts).opts(title=rf"puncta channel {i}, blobs")
-            else:
-                figure += image.opts(title=rf"puncta channel {i}, blobs")
-
-        return figure
-    else:
-        cols = len(imgs) * 2
-        fig, axs = plt.subplots(1, cols, figsize=(5 * cols, 5))
-        for i in range(len(imgs)):
-            plt.sca(axs[i * 2])
-            plt.title(rf"puncta channel {i}")
-            io.imshow(imgs[i].data)
-            lgblobs = logblobs[i]
-
-            plt.sca(axs[2 * i + 1])
-            plt.title(rf"puncta channel {i}, blobs")
-            io.imshow(imgs[i].data)
-            if len(lgblobs) > 0:
-                lgblobs = lgblobs[:, -2:].copy()
-                plt.sca(axs[2 * i + 1])
-                plt.scatter(lgblobs[:, 1], lgblobs[:, 0], edgecolors='red', facecolors='none', s=40)
-
-
-def display_roi_segmentation_results(masks, flows, dataset, channel, chnames, nimg=5):
+def display_cellpose_results(masks, flows, dataset, channel, chnames, nimg=5):
     if 'c' in dataset.dims:
         imgs = dataset.loc[dict(c=chnames[channel])]['image'].data
     else:
@@ -248,3 +128,82 @@ def display_roi_segmentation_results(masks, flows, dataset, channel, chnames, ni
         plot.show_segmentation(fig, img, maski, flowi, channels=[0, 0])
         plt.tight_layout()
         plt.show()
+
+
+def __get_data(ds, channels, channel_names, figsize):
+    if figsize is None:
+        figsize = 5
+    if 'c' in ds.dims:
+        chnames = ds['c'].data
+        if channels is None:
+            channels = np.arange(len(chnames))
+        imgs = [ds.loc[dict(c=chnames[channel])]['image'] for channel in channels]
+    else:
+        chnames = ['channel 0']
+        imgs = [ds['image']]
+    if 'z' in ds.dims:
+        imgs = [img.max('z') for img in imgs]
+    if channel_names is None:
+        channel_names = [chnames[channel] for channel in channels]
+    imgs = [img.data for img in imgs]
+    return imgs, channel_names, figsize
+
+
+def show_dataset(ds, channels=None, channel_names=None, figsize=None):
+    imgs, channel_names, figsize = __get_data(ds, channels, channel_names, figsize)
+    show_imgs(imgs, channel_names, figsize)
+
+
+def show_imgs(imgs, channel_names, figsize=None):
+    if figsize is None:
+        figsize = 5
+    cols = len(imgs)
+    if len(imgs[0].shape) > 2 and imgs[0].shape[-1] != 3:
+        imgs = [img.max(0) for img in imgs]
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        if cols > 1:
+            fig, axs = plt.subplots(1, cols, figsize=(figsize * cols, figsize))
+            for i in range(len(imgs)):
+                plt.sca(axs[i])
+                plt.title(rf"{channel_names[i]}")
+                io.imshow(imgs[i])
+            plt.show()
+        else:
+            plt.figure(figsize=(figsize, figsize))
+            io.imshow(imgs[0])
+            plt.title(rf"{channel_names[0]}")
+            plt.show()
+
+
+def __plot_blobs(img, lgblobs, ax=None):
+    io.imshow(img)
+    if ax is not None:
+        plt.sca(ax)
+
+    if len(lgblobs) > 0:
+        lgblobs = lgblobs[:, -2:].copy()
+        plt.scatter(lgblobs[:, 1], lgblobs[:, 0], edgecolors='red', facecolors='none', s=40)
+
+
+def display_blobs(ds, logblobs, channels=None, channel_names=None,
+                  blobname='LoG blobs', figsize=None):
+    imgs, channel_names, figsize = __get_data(ds, channels, channel_names, figsize)
+
+    cols = len(imgs)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        if cols > 1:
+            fig, axs = plt.subplots(1, cols, figsize=(figsize * cols, figsize))
+            for i in range(len(imgs)):
+                plt.sca(axs[i])
+                __plot_blobs(imgs[i], logblobs[i], axs[i])
+                plt.sca(axs[i])
+                plt.title(rf"{channel_names[i]}: {blobname}")
+            plt.show()
+        else:
+            plt.figure(figsize=(figsize, figsize))
+            __plot_blobs(imgs[0], logblobs[0])
+            plt.title(rf"{channel_names[0]}: {blobname}")
+            plt.show()
