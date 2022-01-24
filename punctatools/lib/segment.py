@@ -482,12 +482,12 @@ def segment_puncta_in_all_channels(dataset, puncta_channels=None, roi_segmentati
         Reduce this to detect blobs with less intensities.
         Default: 0.001.
     threshold_background : float
-        Threshold used to post-filter puncta in cells with diffuse signal.
-        This threshold is provided relative to the median intensity inside cells.
+        Threshold used to post-filter puncta in roi with diffuse signal.
+        This threshold is provided relative to the median intensity inside roi.
         E.g, `threshold_background` = 2 will remove all puncta with intensity lower than two background values.
         Set to 0 to keep all puncta.
     global_background : bool
-        If True, the background value is calculated globally as the `global_background_percentile` of all cells.
+        If True, the background value is calculated globally as the `global_background_percentile` of all roi.
         Default: True
     global_background_percentile : float
         Percentile (between 0 and 100) of cell background values to calculate the global background value.
@@ -510,7 +510,7 @@ def segment_puncta_in_all_channels(dataset, puncta_channels=None, roi_segmentati
         1: apply threshold relative to background in LoG space.
         2: apply threshold relative to the background in image intensity space.
         Default: 1
-    remove_out_of_cell : bool
+    remove_out_of_roi : bool
         If True, remove all puncta (parts) that are not inside cells/nuclei.
         Default: False.
     maxrad_um : float
@@ -533,9 +533,9 @@ def segment_puncta_in_all_channels(dataset, puncta_channels=None, roi_segmentati
         ch_names = ['ch0']
         puncta_channels = [0]
     if roi_segmentation:
-        cells = dataset.loc[dict(c=ch_names[-1])]['image'].data
+        roi = dataset.loc[dict(c=ch_names[-1])]['image'].data
     else:
-        cells = None
+        roi = None
     for key in puncta_kwargs:
         param = np.ravel(puncta_kwargs[key])
         if not len(param) == len(puncta_channels):
@@ -547,7 +547,7 @@ def segment_puncta_in_all_channels(dataset, puncta_channels=None, roi_segmentati
         cur_kwargs = dict()
         for key in puncta_kwargs:
             cur_kwargs[key] = puncta_kwargs[key][i]
-        puncta = segment_puncta(dataset, roi=cells, channel=channel, **cur_kwargs)
+        puncta = segment_puncta(dataset, roi=roi, channel=channel, **cur_kwargs)
         output = __add_segmentation_to_image(output, puncta)
     output = __image_to_dataset(output, list(ch_names) +
                                 [rf'{cn} puncta' for cn in puncta_channels], dataset)
