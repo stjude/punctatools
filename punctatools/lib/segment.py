@@ -73,15 +73,15 @@ def __combine_3D(masks, do_3D, diameter,
     return masks
 
 
-def segment_cells(dataset, channel=None, do_3D=False,
-                  gpu=True, model_type='cyto',
-                  channels=None, diameter=None,
-                  remove_small_mode='3D', remove_small_diam_fraction=0.5,
-                  clear_border=False, add_to_input=False,
-                  return_cellpose_debug=False,
-                  **cellpose_kwargs):
+def segment_roi(dataset, channel=None, do_3D=False,
+                gpu=True, model_type='cyto',
+                channels=None, diameter=None,
+                remove_small_mode='3D', remove_small_diam_fraction=0.5,
+                clear_border=False, add_to_input=False,
+                return_cellpose_debug=False,
+                **cellpose_kwargs):
     """
-    Segment cells/nuclei in one image using cellpose.
+    Segment ROI (cells or nuclei) in one image using cellpose.
 
     Parameters
     ----------
@@ -105,26 +105,26 @@ def segment_cells(dataset, channel=None, do_3D=False,
         The 'channels' parameter of cellpose.
         Default: [0,0] (gray scale)
     diameter : int, optional
-        Target cell diameter in pixels.
+        Target ROI diameter in pixels.
         If None, will be calculated as 12 microns converted to pixels.
         Default: None.
     remove_small_mode : str, optional
         '2D', or '3D'.
-        Used to remove small cells/nuclei by volume (3D) or area (2D).
+        Used to remove small ROI by volume (3D) or area (2D).
         For a thin stack (as in the example data), use '2D'.
         Default: 3D.
     remove_small_diam_fraction : float, optional
-        Minimal diameter for the cells/nuclei.
-        Provided as a fraction of the target diameters (the `diameter` parameter).
+        Minimal diameter for the ROI.
+        Provided as a fraction of the target diameter (the `diameter` parameter of the Cellpose).
         Default: 0.5.
     clear_border : bool, optional
-        If True, will remove cell touching image border (in xy only).
+        If True, will remove ROI touching image border (in xy only).
         Default: False
     add_to_input : bool
         If True, return an xarray dataset with combined input and output.
         Default: False
     return_cellpose_debug : bool
-        If True, return flows, styles and diams together with masks.
+        If True, return flows with masks.
         Default: False
     cellpose_kwargs : key value
         Cellpose arguments
@@ -159,7 +159,7 @@ def segment_cells(dataset, channel=None, do_3D=False,
         else:
             ch_names = ['channel 0']
         masks = __image_to_dataset(masks,
-                                   ch_names + ['Nuclei segmentation'],
+                                   ch_names + ['ROI segmentation'],
                                    dataset)
     if return_cellpose_debug:
         flows = np.array([flows[i][0] for i in range(len(flows))])
@@ -193,9 +193,9 @@ def __image_to_dataset(img, channel_names, template_dataset):
     return dataset
 
 
-def segment_cells_batch(input_dir: str, output_dir: str, channel: int, **kwargs):
+def segment_roi_batch(input_dir: str, output_dir: str, channel: int, **kwargs):
     """
-    Segment all images in a give folder.
+    Segment ROI (cells or nuclei) in all images in a given folder.
 
     Parameters
     ----------
@@ -226,18 +226,21 @@ def segment_cells_batch(input_dir: str, output_dir: str, channel: int, **kwargs)
         The 'channels' parameter of cellpose.
         Default: [0,0] (gray scale)
     diameter : int, optional
-        Target cell diameter in pixels.
+        Target ROI diameter in pixels.
         If None, will be calculated as 12 microns converted to pixels.
         Default: None.
     remove_small_mode : str, optional
         '2D', or '3D'.
-        Used to remove small cells/nuclei by volume (3D) or area (2D).
+        Used to remove small ROI by volume (3D) or area (2D).
         For a thin stack (as in the example data), use '2D'.
         Default: 3D.
     remove_small_diam_fraction : float, optional
-        Minimal diameter for the cells/nuclei.
-        Provided as a fraction of the target diameter (the `diameter` parameter).
+        Minimal diameter for the ROI.
+        Provided as a fraction of the target diameter (the `diameter` parameter of the Cellpose).
         Default: 0.5.
+    clear_border : bool, optional
+        If True, will remove ROI touching image border (in xy only).
+        Default: False
     cellpose_kwargs : key value
         Cellpose arguments
 
@@ -248,7 +251,7 @@ def segment_cells_batch(input_dir: str, output_dir: str, channel: int, **kwargs)
         print(sample)
         print(fr'Processing sample {i + 1} of {len(samples)}')
         dataset = intake_io.imload(sample)
-        output = segment_cells(dataset, channel, add_to_input=True, **kwargs)
+        output = segment_roi(dataset, channel, add_to_input=True, **kwargs)
         fn = sample[len(input_dir):].replace(os.path.splitext(sample)[-1], '.tif')
         os.makedirs(os.path.dirname(output_dir + fn), exist_ok=True)
         intake_io.imsave(output, output_dir + fn)
@@ -272,27 +275,27 @@ def centers_to_markers(logblobs, img, bg_img, threshold_background):
     return markers
 
 
-def calculate_background_image(img, cells, global_background=True,
+def calculate_background_image(img, roi, global_background=True,
                                global_background_percentile=95., background_percentile=50.):
-    if cells is not None and len(np.unique(cells)) > 1:
-        llist = np.unique(cells)[1:]
+    if roi is not None and len(np.unique(roi)) > 1:
+        llist = np.unique(roi)[1:]
         if background_percentile == 50:
-            bg = ndimage.median(img, cells, llist)
+            bg = ndimage.median(img, roi, llist)
         else:
-            bg = np.array([np.percentile(img[cells == lb], background_percentile)
+            bg = np.array([np.percentile(img[roi == lb], background_percentile)
                            for lb in llist])
         if global_background:
             bg_img = np.ones_like(img) * np.percentile(bg, global_background_percentile)
         else:
             bg_img = np.zeros_like(img)
             for i, l in enumerate(llist):
-                bg_img[np.where(cells == l)] = bg[i]
+                bg_img[np.where(roi == l)] = bg[i]
     else:
         bg_img = np.zeros_like(img)
     return bg_img
 
 
-def threshold_puncta(img, bg_img, cells, minsize_um, maxsize_um, num_sigma, spacing,
+def threshold_puncta(img, bg_img, roi, minsize_um, maxsize_um, num_sigma, spacing,
                      segmentation_mode, threshold_segmentation,
                      global_background=True, global_background_percentile=95., background_percentile=50.):
     if segmentation_mode == 0:
@@ -300,7 +303,7 @@ def threshold_puncta(img, bg_img, cells, minsize_um, maxsize_um, num_sigma, spac
         bg_img = np.ones_like(bg_img)
     elif segmentation_mode == 1:
         intensity_image = __filter_laplace(img, minsize_um, maxsize_um, num_sigma, spacing)
-        bg_img = calculate_background_image(intensity_image, cells,
+        bg_img = calculate_background_image(intensity_image, roi,
                                             global_background=global_background,
                                             global_background_percentile=global_background_percentile,
                                             background_percentile=background_percentile)
@@ -314,12 +317,12 @@ def threshold_puncta(img, bg_img, cells, minsize_um, maxsize_um, num_sigma, spac
     return mask
 
 
-def segment_puncta(dataset, channel=None, cells=None, minsize_um=0.2, maxsize_um=2, num_sigma=5,
+def segment_puncta(dataset, channel=None, roi=None, minsize_um=0.2, maxsize_um=2, num_sigma=5,
                    overlap=1, threshold_detection=0.001,
                    threshold_background=0, global_background=True,
                    global_background_percentile=95, background_percentile=50,
                    threshold_segmentation=50, segmentation_mode=1,
-                   remove_out_of_cell=False, maxrad_um=None):
+                   remove_out_of_roi=False, maxrad_um=None):
     """
 
     Parameters
@@ -329,7 +332,7 @@ def segment_puncta(dataset, channel=None, cells=None, minsize_um=0.2, maxsize_um
     channel : int, optional
         Channel number to use for segmentation, starting from 0.
         If the image has only one channel, this can be left out.
-    cells : np.ndarray, optional
+    roi : np.ndarray, optional
         Labeled segmentation masks for cells/nuclei.
         Default: None
     minsize_um : float
@@ -381,7 +384,7 @@ def segment_puncta(dataset, channel=None, cells=None, minsize_um=0.2, maxsize_um
         1: apply threshold relative to background in LoG space.
         2: apply threshold relative to the background in image intensity space.
         Default: 1
-    remove_out_of_cell : bool
+    remove_out_of_roi : bool
         If True, remove all puncta (parts) that are not inside cells/nuclei.
         Default: False.
     maxrad_um : float
@@ -409,19 +412,19 @@ def segment_puncta(dataset, channel=None, cells=None, minsize_um=0.2, maxsize_um
                         threshold=threshold_detection)
 
     # calculate background image
-    bg_img = calculate_background_image(img, cells, global_background,
+    bg_img = calculate_background_image(img, roi, global_background,
                                         global_background_percentile, background_percentile)
 
     # convert the blob centers to watershed markers, filter by background
     markers = centers_to_markers(logblobs, img, bg_img, threshold_background)
 
     # segment puncta
-    mask = threshold_puncta(img, bg_img, cells, minsize_um, maxsize_um, num_sigma, spacing,
+    mask = threshold_puncta(img, bg_img, roi, minsize_um, maxsize_um, num_sigma, spacing,
                             segmentation_mode, threshold_segmentation,
                             global_background, global_background_percentile, background_percentile)
 
-    if remove_out_of_cell and cells is not None:
-        mask = mask * (cells > 0)
+    if remove_out_of_roi and roi is not None:
+        mask = mask * (roi > 0)
 
     dist = ndimage.distance_transform_edt(mask, sampling=tuple(spacing))
     puncta = watershed(-dist, markers, mask=mask)
@@ -438,7 +441,7 @@ def segment_puncta(dataset, channel=None, cells=None, minsize_um=0.2, maxsize_um
     return puncta
 
 
-def segment_puncta_in_all_channels(dataset, puncta_channels=None, cell_segmentation=True,
+def segment_puncta_in_all_channels(dataset, puncta_channels=None, roi_segmentation=True,
                                    **puncta_kwargs):
     """
     Read input image and segment puncta in all specified channels.
@@ -449,7 +452,7 @@ def segment_puncta_in_all_channels(dataset, puncta_channels=None, cell_segmentat
         Image in the form of an xarray dataset (read with intake_io).
     puncta_channels : int or list of int
         (List of) puncta channel(s), starting from 0, to segment puncta in.
-    cell_segmentation : bool
+    roi_segmentation : bool
         If True, use the last channel of the input image as cell/nuclei mask.
         Default: True
     puncta_kwargs : key values
@@ -479,12 +482,12 @@ def segment_puncta_in_all_channels(dataset, puncta_channels=None, cell_segmentat
         Reduce this to detect blobs with less intensities.
         Default: 0.001.
     threshold_background : float
-        Threshold used to post-filter puncta in cells with diffuse signal.
-        This threshold is provided relative to the median intensity inside cells.
+        Threshold used to post-filter puncta in roi with diffuse signal.
+        This threshold is provided relative to the median intensity inside roi.
         E.g, `threshold_background` = 2 will remove all puncta with intensity lower than two background values.
         Set to 0 to keep all puncta.
     global_background : bool
-        If True, the background value is calculated globally as the `global_background_percentile` of all cells.
+        If True, the background value is calculated globally as the `global_background_percentile` of all roi.
         Default: True
     global_background_percentile : float
         Percentile (between 0 and 100) of cell background values to calculate the global background value.
@@ -507,7 +510,7 @@ def segment_puncta_in_all_channels(dataset, puncta_channels=None, cell_segmentat
         1: apply threshold relative to background in LoG space.
         2: apply threshold relative to the background in image intensity space.
         Default: 1
-    remove_out_of_cell : bool
+    remove_out_of_roi : bool
         If True, remove all puncta (parts) that are not inside cells/nuclei.
         Default: False.
     maxrad_um : float
@@ -524,15 +527,15 @@ def segment_puncta_in_all_channels(dataset, puncta_channels=None, cell_segmentat
         puncta_channels = np.ravel(puncta_channels)
         ch_names = dataset.coords['c'].data
         if len(ch_names) <= np.max(puncta_channels) + 1:
-            cell_segmentation = False
+            roi_segmentation = False
     else:
-        cell_segmentation = False
+        roi_segmentation = False
         ch_names = ['ch0']
         puncta_channels = [0]
-    if cell_segmentation:
-        cells = dataset.loc[dict(c=ch_names[-1])]['image'].data
+    if roi_segmentation:
+        roi = dataset.loc[dict(c=ch_names[-1])]['image'].data
     else:
-        cells = None
+        roi = None
     for key in puncta_kwargs:
         param = np.ravel(puncta_kwargs[key])
         if not len(param) == len(puncta_channels):
@@ -544,7 +547,7 @@ def segment_puncta_in_all_channels(dataset, puncta_channels=None, cell_segmentat
         cur_kwargs = dict()
         for key in puncta_kwargs:
             cur_kwargs[key] = puncta_kwargs[key][i]
-        puncta = segment_puncta(dataset, cells=cells, channel=channel, **cur_kwargs)
+        puncta = segment_puncta(dataset, roi=roi, channel=channel, **cur_kwargs)
         output = __add_segmentation_to_image(output, puncta)
     output = __image_to_dataset(output, list(ch_names) +
                                 [rf'{cn} puncta' for cn in puncta_channels], dataset)
@@ -584,7 +587,7 @@ def segment_puncta_batch(input_dir: str, output_dir: str,
     ---------
     puncta_channels : int or list of int
         (List of) puncta channel(s), starting from 0, to segment puncta in.
-    cell_segmentation : bool
+    roi_segmentation : bool
         If True, use the last channel of the input image as cell/nuclei mask.
         Default: True
     minsize_um : float
@@ -636,7 +639,7 @@ def segment_puncta_batch(input_dir: str, output_dir: str,
         1: apply threshold relative to background in LoG space.
         2: apply threshold relative to the background in image intensity space.
         Default: 1
-    remove_out_of_cell : bool
+    remove_out_of_roi : bool
         If True, remove all puncta (parts) that are not inside cells/nuclei.
         Default: False.
     maxrad_um : float

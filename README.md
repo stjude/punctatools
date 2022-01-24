@@ -62,23 +62,23 @@ To overwrite an old environment with the same name, run the above command with t
          
             ``python run_images_to_stack.py -p parameters.json``
     
-### 2. Segment cells or cell nuclei
+### 2. Segment ROI (cells or cell nuclei)
 
-If you don't have cell/nuclei stain and/or not interested in calculating the puncta statistics per cell, 
+If you don't have cell/nuclei stain and/or not interested in calculating the puncta statistics per ROI, 
 go to step 3.
 
 1. Set up the parameter of the cell segmentation with the 
-    [setup_cell_segmentation.ipynb](notebooks/setup_cell_segmentation.ipynb) notebook. 
+    [setup_roi_segmentation.ipynb](notebooks/setup_roi_segmentation.ipynb) notebook. 
     Follow the instructions in the notebook.
 2. Segment the entire dataset.
-   - Option 1: Run the [run_cell_segmentation.ipynb](notebooks/run_cell_segmentation.ipynb) 
+   - Option 1: Run the [run_roi_segmentation.ipynb](notebooks/run_roi_segmentation.ipynb) 
      notebook.
-   - Option 2: Run the [run_cell_segmentation.py](scripts/run_cell_segmentation.py) script: 
+   - Option 2: Run the [run_roi_segmentation.py](scripts/run_roi_segmentation.py) script: 
 
         ``python run_cell_segmentation.py -p <parameter_file>``
 
         where `<parameter_file>` is the json file with parameters generated after running the set up 
-notebook ([setup_cell_segmentation.ipynb](notebooks/setup_cell_segmentation.ipynb)), e.g.:
+notebook ([setup_roi_segmentation.ipynb](notebooks/setup_roi_segmentation.ipynb)), e.g.:
      
         ``python run_cell_segmentation.py -p parameters.json``
 

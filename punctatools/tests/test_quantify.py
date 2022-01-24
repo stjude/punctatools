@@ -8,7 +8,7 @@ from am_utils.utils import walk_dir
 from ddt import ddt, data
 
 from ..lib.quantify import quantify
-from ..lib.segment import segment_cells, segment_puncta_in_all_channels
+from ..lib.segment import segment_roi, segment_puncta_in_all_channels
 
 INPUT_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../example_data/stacks'
 INPUT_DIR_2D = os.path.dirname(os.path.abspath(__file__)) + '/../../example_data/slices'
@@ -24,17 +24,17 @@ class TestQuantify(unittest.TestCase):
     def test_quantify(self, case):
         input_dir, ind, ch_names, puncta_channels = case
         dataset = intake_io.imload(walk_dir(input_dir)[ind])
-        dataset = segment_cells(dataset, channel=0, remove_small_mode='2D', add_to_input=True)
+        dataset = segment_roi(dataset, channel=0, remove_small_mode='2D', add_to_input=True)
         dataset = segment_puncta_in_all_channels(dataset, puncta_channels=puncta_channels,
                                                  minsize_um=0.2, maxsize_um=2, num_sigma=5,
                                                  overlap=1, threshold_detection=0.001, threshold_background=0,
                                                  threshold_segmentation=50, global_background=False,
-                                                 segmentation_mode=1, remove_out_of_cell=False)
-        cell_stats, puncta_stats = quantify(dataset, channel_names=ch_names,
-                                            puncta_channels=puncta_channels)
+                                                 segmentation_mode=1, remove_out_of_roi=False)
+        roi_quant, puncta_quant = quantify(dataset, channel_names=ch_names,
+                                           puncta_channels=puncta_channels)
 
-        self.assertGreater(len(cell_stats), 0)
-        self.assertGreater(len(puncta_stats), 0)
+        self.assertGreater(len(roi_quant), 0)
+        self.assertGreater(len(puncta_quant), 0)
 
     def test_coloc(self):
         img = np.zeros([6, 10, 50, 50])
@@ -57,19 +57,19 @@ class TestQuantify(unittest.TestCase):
         for c in ['x', 'y', 'z']:
             dataset.coords[c] = np.arange(dataset.dims[c])
 
-        cell_stats, puncta_stats = quantify(dataset, channel_names=['ch1', 'ch2', 'ch3'],
-                                            puncta_channels=[1, 2])
+        roi_quant, puncta_quant = quantify(dataset, channel_names=['ch1', 'ch2', 'ch3'],
+                                           puncta_channels=[1, 2])
         c = 'Pearson correlation coefficient ch2 vs ch3'
-        self.assertAlmostEqual(np.mean(cell_stats[c]), 1, 5)
-        self.assertAlmostEqual(np.mean(puncta_stats[c]), 1, 5)
+        self.assertAlmostEqual(np.mean(roi_quant[c]), 1, 5)
+        self.assertAlmostEqual(np.mean(puncta_quant[c]), 1, 5)
 
-        self.assertSequenceEqual(list(np.round_(cell_stats['Overlap coefficient ch2_ch3_coloc'], 2)),
+        self.assertSequenceEqual(list(np.round_(roi_quant['Overlap coefficient ch2_ch3_coloc'], 2)),
                                  [1, 0.33, 0])
 
         for c in ['Pearson correlation coefficient ch1 vs ch2',
                   'Pearson correlation coefficient ch1 vs ch3']:
-            self.assertLess(np.mean(np.abs(cell_stats[c])), 0.1)
-            self.assertLess(np.mean(np.abs(puncta_stats[c])), 0.1)
+            self.assertLess(np.mean(np.abs(roi_quant[c])), 0.2)
+            self.assertLess(np.mean(np.abs(puncta_quant[c])), 0.2)
 
 
 if __name__ == '__main__':
