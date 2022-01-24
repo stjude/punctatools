@@ -15,16 +15,16 @@ INPUT_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../example_data/st
 class TestBatch(unittest.TestCase):
 
     def test_analyze_batch(self):
-        segment_roi_batch(INPUT_DIR, 'tmp_out/cells', channel=0,
+        segment_roi_batch(INPUT_DIR, 'tmp_out/roi', channel=0,
                           remove_small_mode='2D',
                           clear_border=True)
-        segment_puncta_batch('tmp_out/cells', 'tmp_out/puncta', puncta_channels=[1, 2],
+        segment_puncta_batch('tmp_out/roi', 'tmp_out/puncta', puncta_channels=[1, 2],
                              parallel=False,
                              minsize_um=0.2, maxsize_um=2, num_sigma=5,
                              overlap=1, threshold_detection=0.001, threshold_background=0,
                              threshold_segmentation=50,
                              segmentation_mode=1, global_background=False)
-        quantify_batch('tmp_out/puncta', 'tmp_out/cellstats', 'tmp_out/punctastats',
+        quantify_batch('tmp_out/puncta', 'tmp_out/roiquant', 'tmp_out/punctaquant',
                        channel_names=['DNA', 'GFP', 'mCherry'],
                        puncta_channels=[1, 2]
                        )

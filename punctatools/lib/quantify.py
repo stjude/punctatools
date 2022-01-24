@@ -58,10 +58,10 @@ def __get_data(dataset, channel_names, puncta_channels):
     else:
         raise ValueError(rf'No puncta segmentation found')
     if len(dataset['image'].data) >= len(channel_names) + len(puncta_channels) + 1:
-        cells = dataset['image'].data[-len(puncta_channels) - 1]
+        roi = dataset['image'].data[-len(puncta_channels) - 1]
     else:
-        cells = np.zeros_like(imgs[-1])
-    return imgs, cells, puncta
+        roi = np.zeros_like(imgs[-1])
+    return imgs, roi, puncta
 
 
 def __compute_volume_and_position(labels, spacing, name, img=None, img_name=''):
@@ -100,8 +100,8 @@ def __add_intensity_stats(stats, channel_data, labels, channel_name, name, bg_in
     return stats
 
 
-def __add_entropy_stats(stats, channel_data, ind, cur_cell_pix, channel_name):
-    stats.at[ind, channel_name + ' entropy'] = entropy(np.histogram(channel_data[cur_cell_pix],
+def __add_entropy_stats(stats, channel_data, ind, cur_roi_pix, channel_name):
+    stats.at[ind, channel_name + ' entropy'] = entropy(np.histogram(channel_data[cur_roi_pix],
                                                                     bins=channel_data.max())[0])
     return stats
 
@@ -120,62 +120,62 @@ def __add_correlation_stats(stats, ind, channel_data1, channel_data2, cur_cell_p
     return stats
 
 
-def __add_coloc_stats(stats, ind, cur_cell_pix, overlap, union, chname):
-    coloc = np.sum((overlap[cur_cell_pix] > 0)*1) / np.sum(union[cur_cell_pix])
+def __add_coloc_stats(stats, ind, cur_roi_pix, overlap, union, chname):
+    coloc = np.sum((overlap[cur_roi_pix] > 0) * 1) / np.sum(union[cur_roi_pix])
 
     stats.at[ind, 'Overlap coefficient ' + chname] = coloc
     return stats
 
 
-def __add_cell_label(stats, cells):
+def __add_roi_label(stats, roi):
     if 'z' in stats.columns:
         coords = np.int_(np.round_(stats[['z', 'y', 'x']].values))
     else:
         coords = np.int_(np.round_(stats[['y', 'x']].values))
-    stats['ROI label'] = cells[tuple(coords.transpose())]
+    stats['ROI label'] = roi[tuple(coords.transpose())]
     return stats
 
 
-def __summarize_puncta_stats(cell_stats, puncta_stats, puncta_channel):
-    for i in range(len(cell_stats)):
-        current_cell = puncta_stats[puncta_stats['ROI label'] == cell_stats['ROI label'].iloc[i]]
-        cell_stats.at[i, rf'number of {puncta_channel} puncta'] = len(current_cell)
+def __summarize_puncta_quantifications(roi_quant, puncta_quant, puncta_channel):
+    for i in range(len(roi_quant)):
+        current_cell = puncta_quant[puncta_quant['ROI label'] == roi_quant['ROI label'].iloc[i]]
+        roi_quant.at[i, rf'number of {puncta_channel} puncta'] = len(current_cell)
 
         for col in ['puncta volume um', 'puncta volume pix', 'distance to ROI border um']:
             colname = rf"average {puncta_channel} puncta {col} per ROI"
             colname = colname.replace('puncta puncta', 'puncta')
             if len(current_cell) > 0:
-                cell_stats.at[i, colname] = np.mean(current_cell[col])
+                roi_quant.at[i, colname] = np.mean(current_cell[col])
             else:
-                cell_stats.at[i, colname] = 0
+                roi_quant.at[i, colname] = 0
 
         for col in ['puncta volume um', 'puncta volume pix']:
             colname = rf"total {puncta_channel} puncta {col} per ROI"
             colname = colname.replace('puncta puncta', 'puncta')
             if len(current_cell) > 0:
-                cell_stats.at[i, colname] = np.sum(current_cell[col])
+                roi_quant.at[i, colname] = np.sum(current_cell[col])
             else:
-                cell_stats.at[i, colname] = 0
-    return cell_stats
+                roi_quant.at[i, colname] = 0
+    return roi_quant
 
 
-def __total_intensities_in_out_puncta_per_cell(cell_stats, cells, puncta, puncta_channel, channel_data, channel):
-    for label_img, location in zip([cells * (puncta > 0), cells * (puncta == 0)],
+def __total_intensities_in_out_puncta_per_cell(roi_quant, roi, puncta, puncta_channel, channel_data, channel):
+    for label_img, location in zip([roi * (puncta > 0), roi * (puncta == 0)],
                                    [rf'inside {puncta_channel} puncta', rf'outside {puncta_channel} puncta']):
         intensity_stats = regionprops_table(label_image=label_img,
                                             intensity_image=channel_data,
                                             properties=['label', 'area', 'mean_intensity'])
-        ind = cell_stats[cell_stats['ROI label'].isin(intensity_stats['label'])].index
+        ind = roi_quant[roi_quant['ROI label'].isin(intensity_stats['label'])].index
 
-        cell_stats.at[ind, channel + ' mean intensity ' + location] = intensity_stats['mean_intensity']
-        cell_stats.at[ind, channel + ' integrated intensity ' +
-                      location] = np.int_(intensity_stats['mean_intensity'] * intensity_stats['area'])
-    return cell_stats
+        roi_quant.at[ind, channel + ' mean intensity ' + location] = intensity_stats['mean_intensity']
+        roi_quant.at[ind, channel + ' integrated intensity ' +
+                     location] = np.int_(intensity_stats['mean_intensity'] * intensity_stats['area'])
+    return roi_quant
 
 
 def quantify(dataset, channel_names, puncta_channels):
     """
-    Quantify cells and puncta in a segmented dataset.
+    Quantify ROI (cells/nuclei) and puncta in a segmented dataset.
 
     Parameters
     ----------
@@ -189,9 +189,9 @@ def quantify(dataset, channel_names, puncta_channels):
 
     Returns
     -------
-    cell_stats : pd.DataFrame
+    roi_quant : pd.DataFrame
         Statistics per individual cell/nucleus.
-    puncta_stats : pd.DataFrame
+    puncta_quant : pd.DataFrame
         Statistics per individual punctum.
     """
     spacing = intake_io.get_spacing(dataset)
@@ -199,20 +199,20 @@ def quantify(dataset, channel_names, puncta_channels):
         channel_names = [rf"ch{i}" for i in range(len(dataset['c'].data) - len(puncta_channels) - 1)]
     puncta_channels = np.array(channel_names)[puncta_channels]
     channel_names = np.array(channel_names)
-    imgs, cells, puncta = __get_data(dataset, channel_names, puncta_channels)
+    imgs, roi, puncta = __get_data(dataset, channel_names, puncta_channels)
 
     # compute cell volume and positions
-    cell_stats = __compute_volume_and_position(cells, spacing, 'ROI')
+    roi_quant = __compute_volume_and_position(roi, spacing, 'ROI')
 
     # compute intensities of all channels per cell
     for i in range(len(channel_names)):
-        cell_stats = __add_intensity_stats(cell_stats, imgs[i], cells, channel_names[i], 'ROI')
+        roi_quant = __add_intensity_stats(roi_quant, imgs[i], roi, channel_names[i], 'ROI')
 
     # calculate colocalized puncta
     n = len(puncta_channels)
     p_union = []
     for pi1 in range(n):
-        for pi2 in range(pi1+1, n):
+        for pi2 in range(pi1 + 1, n):
             p_intersect = puncta[pi1].astype(np.int64) * puncta[pi2].astype(np.int64)
             p_intersect = relabel_sequential(p_intersect)[0]
             puncta = np.concatenate([puncta, np.expand_dims(p_intersect, 0)], axis=0)
@@ -221,55 +221,55 @@ def quantify(dataset, channel_names, puncta_channels):
             p_union.append(((puncta[pi1] + puncta[pi2]) > 0) * 1)
 
     # compute entropy, colocalization and correlations of all channels per cell
-    for ind in range(len(cell_stats)):
-        cur_cell_pix = np.where(cells == cell_stats['ROI label'].iloc[ind])
+    for ind in range(len(roi_quant)):
+        cur_roi_pix = np.where(roi == roi_quant['ROI label'].iloc[ind])
         for i in range(len(channel_names)):
-            cell_stats = __add_entropy_stats(cell_stats, imgs[i], ind, cur_cell_pix, channel_names[i])
+            roi_quant = __add_entropy_stats(roi_quant, imgs[i], ind, cur_roi_pix, channel_names[i])
 
             for j in range(i + 1, len(channel_names)):
-                cell_stats = __add_correlation_stats(cell_stats, ind, imgs[i], imgs[j], cur_cell_pix,
-                                                     [channel_names[i], channel_names[j]])
+                roi_quant = __add_correlation_stats(roi_quant, ind, imgs[i], imgs[j], cur_roi_pix,
+                                                    [channel_names[i], channel_names[j]])
 
         for i in range(len(p_union)):
-            cell_stats = __add_coloc_stats(cell_stats, ind, cur_cell_pix,
-                                           puncta[n+i], p_union[i], puncta_channels[n+i])
+            roi_quant = __add_coloc_stats(roi_quant, ind, cur_roi_pix,
+                                          puncta[n + i], p_union[i], puncta_channels[n + i])
 
     # quantify puncta
-    dist_to_border = ndimage.morphology.distance_transform_edt(cells > 0, sampling=spacing)
-    puncta_stats_all = pd.DataFrame()
+    dist_to_border = ndimage.morphology.distance_transform_edt(roi > 0, sampling=spacing)
+    puncta_quant_all = pd.DataFrame()
     for p_i in range(len(puncta_channels)):
         # compute volume and positions of puncta
-        puncta_stats = __compute_volume_and_position(puncta[p_i], spacing, 'puncta',
+        puncta_quant = __compute_volume_and_position(puncta[p_i], spacing, 'puncta',
                                                      img=dist_to_border, img_name='distance to ROI border um')
-        puncta_stats = __add_cell_label(puncta_stats, cells)
+        puncta_quant = __add_roi_label(puncta_quant, roi)
 
         # compute intensities of all channels per puncta
         for i in range(len(channel_names)):
-            puncta_stats = __add_intensity_stats(puncta_stats, imgs[i], puncta[p_i],
+            puncta_quant = __add_intensity_stats(puncta_quant, imgs[i], puncta[p_i],
                                                  channel_names[i], 'puncta', bg_intensity=False)
 
         # summarize puncta stats
-        cell_stats = __summarize_puncta_stats(cell_stats, puncta_stats, puncta_channels[p_i])
+        roi_quant = __summarize_puncta_quantifications(roi_quant, puncta_quant, puncta_channels[p_i])
 
         # intensity stats per cell inside/outside puncta
         for i in range(len(channel_names)):
-            cell_stats = __total_intensities_in_out_puncta_per_cell(cell_stats, cells, puncta[p_i],
-                                                                    puncta_channels[p_i], imgs[i],
-                                                                    channel_names[i])
+            roi_quant = __total_intensities_in_out_puncta_per_cell(roi_quant, roi, puncta[p_i],
+                                                                   puncta_channels[p_i], imgs[i],
+                                                                   channel_names[i])
 
         # compute correlations of all channels per puncta
-        for ind in range(len(puncta_stats)):
-            cur_puncta_pix = np.where(puncta[p_i] == puncta_stats['puncta label'].iloc[ind])
+        for ind in range(len(puncta_quant)):
+            cur_puncta_pix = np.where(puncta[p_i] == puncta_quant['puncta label'].iloc[ind])
             for i in range(len(channel_names)):
                 for j in range(i + 1, len(channel_names)):
-                    puncta_stats = __add_correlation_stats(puncta_stats, ind, imgs[i], imgs[j], cur_puncta_pix,
+                    puncta_quant = __add_correlation_stats(puncta_quant, ind, imgs[i], imgs[j], cur_puncta_pix,
                                                            [channel_names[i], channel_names[j]])
 
         # combine puncta stats from all channels
-        puncta_stats['channel'] = puncta_channels[p_i]
-        puncta_stats_all = pd.concat([puncta_stats_all, puncta_stats], ignore_index=True)
+        puncta_quant['channel'] = puncta_channels[p_i]
+        puncta_quant_all = pd.concat([puncta_quant_all, puncta_quant], ignore_index=True)
 
-    return cell_stats, puncta_stats_all
+    return roi_quant, puncta_quant_all
 
 
 def __set_sample_name(stats, imgname):
@@ -281,21 +281,21 @@ def __set_sample_name(stats, imgname):
 
 
 def __quantify(item, **kwargs):
-    fn_in, fn_out_cells, fn_out_puncta, imgname = item
+    fn_in, fn_out_roi, fn_out_puncta, imgname = item
     dataset = intake_io.imload(fn_in)
-    cell_stats, puncta_stats = quantify(dataset=dataset, **kwargs)
+    roi_quant, puncta_quant = quantify(dataset=dataset, **kwargs)
 
-    cell_stats = __set_sample_name(cell_stats, imgname)
-    puncta_stats = __set_sample_name(puncta_stats, imgname)
+    roi_quant = __set_sample_name(roi_quant, imgname)
+    puncta_quant = __set_sample_name(puncta_quant, imgname)
 
-    os.makedirs(os.path.dirname(fn_out_cells), exist_ok=True)
+    os.makedirs(os.path.dirname(fn_out_roi), exist_ok=True)
     os.makedirs(os.path.dirname(fn_out_puncta), exist_ok=True)
 
-    cell_stats.to_csv(fn_out_cells, index=False)
-    puncta_stats.to_csv(fn_out_puncta, index=False)
+    roi_quant.to_csv(fn_out_roi, index=False)
+    puncta_quant.to_csv(fn_out_puncta, index=False)
 
 
-def quantify_batch(input_dir: str, output_dir_cells: str, output_dir_puncta: str,
+def quantify_batch(input_dir: str, output_dir_roi: str, output_dir_puncta: str,
                    parallel: bool = True, n_jobs: int = 8,
                    **kwargs):
     """
@@ -303,10 +303,10 @@ def quantify_batch(input_dir: str, output_dir_cells: str, output_dir_puncta: str
 
     input_dir : str
         Input directory
-    output_dir_cells : str
-        Output directory to save cell stats.
+    output_dir_roi : str
+        Output directory to save measurements individual ROI (cells or nuclei).
     output_dir_puncta : str
-        Output directory to save puncta stats.
+        Output directory to save measurements for individual puncta.
     parallel : bool, optional
         If True, run the conversion in parallel.
         Default: True
@@ -325,7 +325,7 @@ def quantify_batch(input_dir: str, output_dir_cells: str, output_dir_puncta: str
     """
 
     files = walk_dir(input_dir)
-    items = [(fn, fn.replace(input_dir, output_dir_cells).replace('.tif', '.csv'),
+    items = [(fn, fn.replace(input_dir, output_dir_roi).replace('.tif', '.csv'),
               fn.replace(input_dir, output_dir_puncta).replace('.tif', '.csv'),
               fn[len(input_dir) + 1:])
              for fn in files]
@@ -335,5 +335,5 @@ def quantify_batch(input_dir: str, output_dir_cells: str, output_dir_puncta: str
     else:
         for item in tqdm(items):
             __quantify(item=item, **kwargs)
-    combine_statistics(output_dir_cells.rstrip('/') + '/')
+    combine_statistics(output_dir_roi.rstrip('/') + '/')
     combine_statistics(output_dir_puncta.rstrip('/') + '/')

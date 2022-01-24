@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     quantify_batch(input_dir=segm_kwargs['output_dir'],
                    output_dir_puncta=os.path.join(kwargs['output_dir'], puncta_stat_dir),
-                   output_dir_cells=os.path.join(kwargs['output_dir'], cell_stat_dir),
+                   output_dir_roi=os.path.join(kwargs['output_dir'], cell_stat_dir),
                    parallel=True, n_jobs=kwargs['n_jobs'],
                    channel_names=channel_names,
                    puncta_channels=kwargs['puncta_channels'],
