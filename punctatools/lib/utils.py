@@ -228,3 +228,23 @@ def display_roi_segmentation_results(masks, flows, dataset, channel, chnames, ni
         plot.show_segmentation(fig, img, maski, flowi, channels=[0, 0])
         plt.tight_layout()
         plt.show()
+
+
+def crop_dataset(dataset, x, y, z, width, height, depth):
+    sp = intake_io.get_spacing(dataset)[-1]
+
+    ds_crop = dataset.copy()
+
+    if x is not None and width is not None:
+        ds_crop = ds_crop.loc[dict(x=slice(x * sp, (x + width - 1) * sp))]
+    if y is not None and height is not None:
+        ds_crop = ds_crop.loc[dict(y=slice(y * sp, (y + height - 1) * sp))]
+
+    if 'z' in dataset.dims and z is not None and depth is not None:
+        sp = intake_io.get_spacing(dataset)[0]
+        ds_crop = ds_crop.loc[dict(z=slice(z * sp, (z + depth - 1) * sp))]
+
+    sp = intake_io.get_spacing(dataset)[-1]
+    ds_crop.coords['x'] = np.arange(ds_crop['image'].shape[-1]) * sp
+    ds_crop.coords['y'] = np.arange(ds_crop['image'].shape[-2]) * sp
+    return ds_crop
