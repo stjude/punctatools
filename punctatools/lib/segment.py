@@ -162,7 +162,8 @@ def segment_cells(dataset, channel=None, do_3D=False,
                                    ch_names + ['Nuclei segmentation'],
                                    dataset)
     if return_cellpose_debug:
-        return masks, flows, styles, diams
+        flows = np.array([flows[i][0] for i in range(len(flows))])
+        return masks, np.squeeze(flows)
     else:
         return masks
 

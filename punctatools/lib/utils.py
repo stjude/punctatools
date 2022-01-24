@@ -218,7 +218,7 @@ def display_roi_segmentation_results(masks, flows, dataset, channel, chnames, ni
 
     for i in ind:
         maski = masks[i]
-        flowi = flows[i][0]
+        flowi = flows[i]
         img = imgs[i]
         fig = plt.figure(figsize=(30, 10))
         if len(img.shape) > 2:
