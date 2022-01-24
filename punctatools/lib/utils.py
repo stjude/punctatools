@@ -58,6 +58,49 @@ def load_parameters(variables, param_keys, param_matches):
     return kwargs
 
 
+def params_to_list(nchannels, *params):
+    params = list(params)
+    for i in range(len(params)):
+        param = np.ravel(params[i])
+        if not len(param) == nchannels:
+            param = [param[0]] * nchannels
+        params[i] = param
+    return params
+
+
+def get_value_from_list(channel, *params):
+    params = list(params)
+    for i in range(len(params)):
+        params[i] = params[i][channel]
+    return params
+
+
+def convert_params(nchannels, channel, *params):
+    params = params_to_list(nchannels, *params)
+    params = get_value_from_list(channel, *params)
+    return params
+
+
+def crop_dataset(dataset, x, y, z, width, height, depth):
+    sp = intake_io.get_spacing(dataset)[-1]
+
+    ds_crop = dataset.copy()
+
+    if x is not None and width is not None:
+        ds_crop = ds_crop.loc[dict(x=slice(x * sp, (x + width - 1) * sp))]
+    if y is not None and height is not None:
+        ds_crop = ds_crop.loc[dict(y=slice(y * sp, (y + height - 1) * sp))]
+
+    if 'z' in dataset.dims and z is not None and depth is not None:
+        sp = intake_io.get_spacing(dataset)[0]
+        ds_crop = ds_crop.loc[dict(z=slice(z * sp, (z + depth - 1) * sp))]
+
+    sp = intake_io.get_spacing(dataset)[-1]
+    ds_crop.coords['x'] = np.arange(ds_crop['image'].shape[-1]) * sp
+    ds_crop.coords['y'] = np.arange(ds_crop['image'].shape[-2]) * sp
+    return ds_crop
+
+
 def show_image_and_nuclei(ds, channels, nuclei=None, figsize=None):
     if figsize is None:
         figsize = 5
@@ -177,29 +220,6 @@ def display_blobs(ds, channels, logblobs, wh=400, cmap='viridis', holoviews=True
                 plt.scatter(lgblobs[:, 1], lgblobs[:, 0], edgecolors='red', facecolors='none', s=40)
 
 
-def params_to_list(nchannels, *params):
-    params = list(params)
-    for i in range(len(params)):
-        param = np.ravel(params[i])
-        if not len(param) == nchannels:
-            param = [param[0]] * nchannels
-        params[i] = param
-    return params
-
-
-def get_value_from_list(channel, *params):
-    params = list(params)
-    for i in range(len(params)):
-        params[i] = params[i][channel]
-    return params
-
-
-def convert_params(nchannels, channel, *params):
-    params = params_to_list(nchannels, *params)
-    params = get_value_from_list(channel, *params)
-    return params
-
-
 def display_roi_segmentation_results(masks, flows, dataset, channel, chnames, nimg=5):
     if 'c' in dataset.dims:
         imgs = dataset.loc[dict(c=chnames[channel])]['image'].data
@@ -228,23 +248,3 @@ def display_roi_segmentation_results(masks, flows, dataset, channel, chnames, ni
         plot.show_segmentation(fig, img, maski, flowi, channels=[0, 0])
         plt.tight_layout()
         plt.show()
-
-
-def crop_dataset(dataset, x, y, z, width, height, depth):
-    sp = intake_io.get_spacing(dataset)[-1]
-
-    ds_crop = dataset.copy()
-
-    if x is not None and width is not None:
-        ds_crop = ds_crop.loc[dict(x=slice(x * sp, (x + width - 1) * sp))]
-    if y is not None and height is not None:
-        ds_crop = ds_crop.loc[dict(y=slice(y * sp, (y + height - 1) * sp))]
-
-    if 'z' in dataset.dims and z is not None and depth is not None:
-        sp = intake_io.get_spacing(dataset)[0]
-        ds_crop = ds_crop.loc[dict(z=slice(z * sp, (z + depth - 1) * sp))]
-
-    sp = intake_io.get_spacing(dataset)[-1]
-    ds_crop.coords['x'] = np.arange(ds_crop['image'].shape[-1]) * sp
-    ds_crop.coords['y'] = np.arange(ds_crop['image'].shape[-2]) * sp
-    return ds_crop
