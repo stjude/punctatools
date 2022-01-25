@@ -15,13 +15,23 @@ from skimage.segmentation import watershed
 from tqdm import tqdm
 
 from .preprocess import rescale_intensity
+from .utils import display_cellpose_results
 
 
 def __get_images(dataset, do_3D, channel):
+    channels = [0, 0]
     if 'c' in dataset.dims:
         if channel is not None:
             ch_names = dataset.coords['c'].data
-            imgs = dataset.loc[dict(c=ch_names[channel])]['image'].data
+            channel = np.ravel(channel)
+            if len(channel) == 1:
+                imgs = dataset.loc[dict(c=ch_names[channel[0]])]['image'].data
+            else:
+                nuclei = dataset.loc[dict(c=ch_names[channel[0]])]['image'].data
+                cells = dataset.loc[dict(c=ch_names[channel[1]])]['image'].data
+                imgs = np.array([np.zeros_like(nuclei), cells, nuclei])
+                imgs = np.moveaxis(imgs, 0, -1)
+                channels = [2, 3]
         else:
             raise ValueError("The image has multiples channels. Provide channel to segment.")
     else:
@@ -34,7 +44,7 @@ def __get_images(dataset, do_3D, channel):
         imgs = [imgs]
     else:
         anisotropy = None
-    return imgs, anisotropy
+    return imgs, anisotropy, channels
 
 
 def __reshape_output(masks, dataset, do_3D):
@@ -74,11 +84,10 @@ def __combine_3D(masks, do_3D, diameter,
 
 
 def segment_roi(dataset, channel=None, do_3D=False,
-                gpu=True, model_type='cyto',
-                channels=None, diameter=None,
+                gpu=True, model_type='cyto', diameter=None,
                 remove_small_mode='3D', remove_small_diam_fraction=0.5,
                 clear_border=False, add_to_input=False,
-                return_cellpose_debug=False,
+                show_cellpose_debug=False,
                 **cellpose_kwargs):
     """
     Segment ROI (cells or nuclei) in one image using cellpose.
@@ -123,7 +132,7 @@ def segment_roi(dataset, channel=None, do_3D=False,
     add_to_input : bool
         If True, return an xarray dataset with combined input and output.
         Default: False
-    return_cellpose_debug : bool
+    show_cellpose_debug : bool
         If True, return flows with masks.
         Default: False
     cellpose_kwargs : key value
@@ -134,9 +143,7 @@ def segment_roi(dataset, channel=None, do_3D=False,
     masks = np.ndarray or xr.Dataset
         Segmented image or input with segmented image
     """
-    if channels is None:
-        channels = [0, 0]
-    imgs, anisotropy = __get_images(dataset, do_3D, channel)
+    imgs, anisotropy, channels = __get_images(dataset, do_3D, channel)
     imgs = [rescale_intensity(np.array(img)) for img in imgs]
 
     model = models.Cellpose(gpu=gpu, model_type=model_type)
@@ -152,7 +159,10 @@ def segment_roi(dataset, channel=None, do_3D=False,
                          remove_small_mode=remove_small_mode,
                          remove_small_diam_fraction=remove_small_diam_fraction,
                          clear_border=clear_border)
-    if add_to_input and not return_cellpose_debug:
+    if show_cellpose_debug:
+        flows = np.array([flows[i][0] for i in range(len(flows))])
+        display_cellpose_results(imgs, masks, flows, channels, is_3d='z' in dataset.dims)
+    if add_to_input:
         masks = __add_segmentation_to_image(dataset['image'].data, masks)
         if 'c' in dataset.dims:
             ch_names = list(dataset.coords['c'].data)
@@ -161,11 +171,7 @@ def segment_roi(dataset, channel=None, do_3D=False,
         masks = __image_to_dataset(masks,
                                    ch_names + ['ROI segmentation'],
                                    dataset)
-    if return_cellpose_debug:
-        flows = np.array([flows[i][0] for i in range(len(flows))])
-        return masks, np.squeeze(flows)
-    else:
-        return masks
+    return masks
 
 
 def __add_segmentation_to_image(img, masks):
