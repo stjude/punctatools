@@ -109,6 +109,7 @@ def display_cellpose_results(masks, flows, dataset, channel, chnames, nimg=5):
     if 'z' not in dataset.dims:
         imgs = [imgs]
         masks = [masks]
+        flows = [flows]
 
     if len(imgs) > nimg:
         ind0 = int(len(imgs) / 2)
