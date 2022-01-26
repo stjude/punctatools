@@ -66,6 +66,8 @@ Otherwise, go to step 3.
     Follow the instructions in the notebook.
 2. Segment the entire dataset with the [run_roi_segmentation.ipynb](notebooks/run_roi_segmentation.ipynb) 
      notebook.
+   
+<img src="docs/cellpose.png" width="600">
 
 ### 3. Segment and quantify puncta
 
@@ -75,6 +77,8 @@ Otherwise, go to step 3.
 2. Analyze the entire dataset with the [run_puncta_analysis.ipynb](notebooks/run_puncta_analysis.ipynb) 
      notebook.
    
+<img src="docs/puncta.png" width="200">
+
 ### Batch processing
 
 There are two options to run analysis in the batch mode.
