@@ -100,16 +100,9 @@ def crop_dataset(dataset, x, y, z, width, height, depth):
     return ds_crop
 
 
-def display_cellpose_results(masks, flows, dataset, channel, chnames, nimg=5):
-    if 'c' in dataset.dims:
-        imgs = dataset.loc[dict(c=chnames[channel])]['image'].data
-    else:
-        imgs = dataset['image'].data
-
-    if 'z' not in dataset.dims:
-        imgs = [imgs]
+def display_cellpose_results(imgs, masks, flows, channels, nimg=5, is_3d=True):
+    if not is_3d:
         masks = [masks]
-
     if len(imgs) > nimg:
         ind0 = int(len(imgs) / 2)
         ind = np.arange(ind0 - int(nimg / 2), ind0 + (nimg - int(nimg / 2)))
@@ -121,11 +114,11 @@ def display_cellpose_results(masks, flows, dataset, channel, chnames, nimg=5):
         flowi = flows[i]
         img = imgs[i]
         fig = plt.figure(figsize=(30, 10))
-        if len(img.shape) > 2:
+        if len(img.shape) > 2 and img.shape[-1] != 3:
             img = img[int(img.shape[0] / 2)]
             maski = maski[int(maski.shape[0] / 2)]
             flowi = flowi[int(flowi.shape[0] / 2)]
-        plot.show_segmentation(fig, img, maski, flowi, channels=[0, 0])
+        plot.show_segmentation(fig, (img*255).astype(np.uint8), maski, flowi, channels=channels)
         plt.tight_layout()
         plt.show()
 

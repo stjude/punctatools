@@ -11,6 +11,9 @@ from tqdm import tqdm
 def __get_i_tag(input_dir: str, channel_code: str = "_C", z_position_code: str = "_Z"):
     fn = walk_dir(input_dir)[0]
     codes = [channel_code, z_position_code]
+    codes = [code for code in codes if code is not None]
+    if len(codes) == 0:
+        raise ValueError('Either "channel_code" or "z_position_code" must be not None!')
     ind = np.argmin([re.findall(rf'(.*){code}\d+', fn)[0] for code in codes])
     return re.compile(rf"{input_dir}(.*){codes[ind]}\d+")
 
@@ -21,8 +24,7 @@ def __get_source(input_dir: str, channel_code: str = "_C", z_position_code: str 
         tag['c'] = channel_code
     if z_position_code is not None:
         tag['z'] = z_position_code
-    if channel_code is not None and z_position_code is not None:
-        tag['i'] = __get_i_tag(input_dir, channel_code=channel_code, z_position_code=z_position_code)
+    tag['i'] = __get_i_tag(input_dir, channel_code=channel_code, z_position_code=z_position_code)
     src = intake_io.source.FilePatternSource(input_dir,
                                              axis_tags=tag,
                                              extensions=[os.path.splitext(walk_dir(input_dir)[0])[-1]],
