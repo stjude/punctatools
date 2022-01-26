@@ -27,77 +27,75 @@ To overwrite an old environment with the same name, run the above command with t
 
 ## Usage
 
-### 1. Prepare your images
+### 1. Prepare the images for analysis
 
-- If your dataset is organized in a way that all channels and z-layers belonging to the same image 
-  are combined in one file (e.g. multi-page tiff, or raw microscopy format), and one file corresponds
-  to one image, you may skip this step and go directly to step 2. 
-  Make sure that the pixel size and z-spacing are included in the metadata 
-  of the image files: this information will later be used during 
-  quantification to determine volumes of cells and puncta.
-  
-- If your dataset contains multiple positions or time points per file 
-  (e.g., the Slidebook format), split the file into individual positions, e.g. using the provided 
-  Fiji macro: [scripts/export_multipage.ijm](scripts/export_multipage.ijm). 
-  Open the macro in [Fiji](https://imagej.net/software/fiji/) and run it. 
-  When prompted, select the input directory with the images to convert, 
-  and the output directory to save the results (the output directory will need to be 
-  created beforehand).
-  
-- If you have channels and/or z-layers as individual files, combine the images to stacks
-  with the provided conversion notebooks:
+Images must organized into z-stacks by combining all channels and z-layers from the same field-of-view.
 
-    1. Set up the parameter of the conversion with the 
-    [setup_images_to_stack.ipynb](notebooks/setup_images_to_stack.ipynb) notebook. 
-    Follow the instructions in the notebook.
-    2. Convert the entire dataset.
-       - Option 1: Run the [run_images_to_stack.ipynb](notebooks/run_images_to_stack.ipynb) 
-         notebook.
-       - Option 2: Run the [run_images_to_stack.py](scripts/run_images_to_stack.py) script: 
-    
-            ``python run_images_to_stack.py -p <parameter_file>``
-    
-            where `<parameter_file>` is the json file with parameters generated after running the set up 
-    notebook ([setup_images_to_stack.ipynb](notebooks/setup_images_to_stack.ipynb)), e.g.:
-         
-            ``python run_images_to_stack.py -p parameters.json``
-    
+**Option 1:**  If the acquisition software allow, creates a single z-stack per acquisition, 
+which  combines all fluorescent channels into separate layers. 
+Make sure that the image metadata includes the correct pixel size and z-spacing.
+
+**Option 2**: Multiple positions or time points per file (e.g., Slidebook format).
+
+Use the provided conversion macro 
+(https://github.com/stjude/punctatools/blob/main/scripts/export_multipage.ijm)
+to split images to individual positions. Open the macro in [Fiji](https://imagej.net/software/fiji/) 
+and run it. When prompted, select the input (source) directory with the images to convert, 
+and the output (target) directory to save the results 
+(the output directory will need to be created beforehand).
+
+**Option 3**: Individual files for each channel and z-layer.
+
+Use the provided conversion notebooks to combine channels and z-layers into stacks.
+
+1. Set up the parameters of the conversion with the 
+[setup_images_to_stack.ipynb](notebooks/setup_images_to_stack.ipynb) notebook. 
+Follow the instructions in the notebook.
+   
+2. Convert the entire dataset with the [run_images_to_stack.ipynb](notebooks/run_images_to_stack.ipynb) 
+     notebook.
+   
 ### 2. Segment ROI (cells or cell nuclei)
 
-If you don't have cell/nuclei stain and/or not interested in calculating the puncta statistics per ROI, 
-go to step 3.
+Follow this step if you wish to quantify puncta in individual ROIs (cells / nuclei)
+ and your images contain a channel with a fluorescent label specific to this region of interest.
+Otherwise, go to step 3.
 
 1. Set up the parameter of the cell segmentation with the 
     [setup_roi_segmentation.ipynb](notebooks/setup_roi_segmentation.ipynb) notebook. 
     Follow the instructions in the notebook.
-2. Segment the entire dataset.
-   - Option 1: Run the [run_roi_segmentation.ipynb](notebooks/run_roi_segmentation.ipynb) 
+2. Segment the entire dataset with the [run_roi_segmentation.ipynb](notebooks/run_roi_segmentation.ipynb) 
      notebook.
-   - Option 2: Run the [run_roi_segmentation.py](scripts/run_roi_segmentation.py) script: 
-
-        ``python run_cell_segmentation.py -p <parameter_file>``
-
-        where `<parameter_file>` is the json file with parameters generated after running the set up 
-notebook ([setup_roi_segmentation.ipynb](notebooks/setup_roi_segmentation.ipynb)), e.g.:
-     
-        ``python run_cell_segmentation.py -p parameters.json``
-
-
 
 ### 3. Segment and quantify puncta
 
 1. Set up the parameter of the puncta analysis with the 
     [setup_puncta_analysis.ipynb](notebooks/setup_puncta_analysis.ipynb) notebook. 
     Follow the instructions in the notebook.
-2. Analyze the entire dataset.
-   - Option 1: Run the [run_puncta_analysis.ipynb](notebooks/run_puncta_analysis.ipynb) 
+2. Analyze the entire dataset with the [run_puncta_analysis.ipynb](notebooks/run_puncta_analysis.ipynb) 
      notebook.
-   - Option 2: Run the [run_puncta_analysis.py](scripts/run_puncta_analysis.py) script: 
+   
+### Batch processing
 
-        ``python run_puncta_analysis.py -p <parameter_file>``
+There are two options to run analysis in the batch mode.
 
-        where `<parameter_file>` is the json file with parameters generated after running the set up 
-notebook ([setup_puncta_analysis.ipynb](notebooks/setup_puncta_analysis.ipynb)), e.g.:
-     
-        ``python run_puncta_analysis.py -p parameters.json``
-     
+**Option 1**: use the provided notebooks ([run_images_to_stack.ipynb](notebooks/run_images_to_stack.ipynb),
+[run_roi_segmentation.ipynb](notebooks/run_roi_segmentation.ipynb), 
+and [run_puncta_analysis.ipynb](notebooks/run_puncta_analysis.ipynb)) after setting up the parameters 
+with the corresponding setup notebooks, as described above
+
+**Option 2**: instead of notebooks, you can use the script versions of the batch analysis: 
+[run_images_to_stack.py](scripts/run_images_to_stack.py), 
+[run_roi_segmentation.py](scripts/run_roi_segmentation.py), and 
+[run_puncta_analysis.py](scripts/run_puncta_analysis.py). 
+You can run the scripts with the following command:
+
+``python <script_name> -p <parameter_file>``
+
+where `<script_name>` is the name of the script (with the path), and `<parameter_file>` 
+is the json file with parameters generated after running the corresponding setup notebook.
+
+Example:
+
+``python run_puncta_analysis.py -p parameters.json``
+
