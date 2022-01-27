@@ -2,7 +2,9 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-gr.svg)](https://opensource.org/licenses/Apache-2.0)
 
 
-# Image analysis of fluorescently tagged biomolecular condensates
+# Punctatools: quantification of puncta-like structures inside cells
+
+This package provides tools to detect, colocalize, and quantify spots/puncta from 3D fluorescent images and summarize puncta characteristics for individual cells or nuclei.
 
 ## Installation
 
@@ -28,6 +30,12 @@ To overwrite an old environment with the same name, run the above command with t
 
 `conda env create -f punctatools.yml --force`
 
+## Requirements
+
+2D or 3D images that include channels for:
+
+- fluorescently-tagged biomolecule(s) of interest that form(s) puncta-like / spot-like structures
+- (optional) fluorescent marker specific to the region of interest, e.g. cell or nucleus
 
 ## Usage
 
