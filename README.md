@@ -6,6 +6,10 @@
 
 This package provides tools to detect, colocalize, and quantify spots/puncta from 3D fluorescent images and summarize puncta characteristics for individual cells or nuclei.
 
+Our puncta detection pipeline is based on the [scikit-image](https://scikit-image.org/) implementation of the Laplacian of Gaussian (LoG) filter with additional processing to segment and filter puncta. We provide a [setup notebook](notebooks/setup_puncta_analysis.ipynb) that guides the user through parameter adjustment for each step of the puncta detection pipeline, making the pipeline adaptable to various puncta types and image contrasts.
+
+To quantify puncta properties per cell, we use [Cellpose](https://github.com/mouseland/cellpose) as the first step of the pipeline to segment cells/nuclei from images of cell/nuclei-specific fluorescent marker. 
+
 ## Installation
 
 **Option 1:**
