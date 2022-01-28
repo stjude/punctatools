@@ -1,0 +1,235 @@
+---
+title: "Compute thermodynamic features of puncta"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(dplyr)
+library(openxlsx)
+`%notin%` <- Negate(`%in%`)
+```
+
+```{r}
+############################
+##
+## cell.data is the input cell level features from punctatools: e.g., "cell_stat.csv" 
+## puncta.data is the input puncta level features from punctatools: e.g., "puncta_stat.csv"
+## cell.list.ex is an optional user provided input list of cells (mitotic/ dead) to exclude: e.g., "cells_to_exclude.csv"
+## cell.channel is the user provided name of the cell channel: e.g., "Hoechst"
+## puncta.channel is the user provided name of the puncta channel(s): e.g., "GFP" for single channel or c("GFP", "mCherry") for two puncta channels
+## factor_conc is the user provided ratio between FL intensity and concentration in uM from FL calibration: e.g., 0.02 for single channel "GFP" or c(0.02, 0.03) for two channel
+## temp is the user provided temperature in K: e.g., 310
+##
+#############################
+
+# Define a function 
+
+process.image.file=function(cell.data,      # cell data data.frame
+                            puncta.data,    # puncta data data.frame
+                            cell.list.ex,   # cells (mitotic/ dead) to exclude (optional)
+                            cell.channel,   # string with cell channel
+                            puncta.channel, # strings with names of puncta channels
+                            factor_conc,    # ratio between FL intensity and concentration in uM
+                            temp)           # temperature in degrees K
+  
+{ # BEGIN function
+  
+  #=======Stop if any of the the required input is missing=========
+  stopifnot("cell.data is missing" = !missing(cell.data))
+  stopifnot("puncta.data is missing" = !missing(puncta.data))
+  stopifnot("cell.channel is missing" = !missing(cell.channel))
+  stopifnot("puncta.channel is missing" = !missing(puncta.channel))
+  stopifnot("factor_conc is missing" = !missing(factor_conc))
+  stopifnot("temp is missing" = !missing(temp))
+  
+  #====================Puncta data=====================
+  # Calculate "total FL puncta intensity per cell"
+  puncta.data %>% 
+  group_by(condition, sample, cell_label) %>% 
+  summarise_at(c(paste0(puncta.channel,".mean.intensity.per.puncta")), sum) -> df0.p
+  
+  #====================Cell data=======================
+  # Raname the column "cell.label"
+  rename(cell.data, cell_label = cell.label) -> df0.c
+  
+  #==========Combine the puncta and cell data==========
+  #keep all the cells even with 0 punctum
+  merge(df0.c, df0.p, by=c("condition", "sample", "cell_label"), all.x=TRUE) -> df_c
+  
+  # Create an unique idetifier for each cell 
+  df_c$position.cell_label<-paste0(df_c$sample, "_", df_c$cell_label)
+  
+  # Read the list of cells to exclude (Optional)
+  if (missing(cell.list.ex)){
+    print("Cells to exclude is empty.")
+    df_c -> df.c
+
+  } else {
+    cell.list.ex -> df.ex
+    df.ex$position.cell_label <- paste0(df.ex$sample, "_", df.ex$cell_label)
+    list.cell.ex <- df.ex$position.cell_label
+    print(paste0("Cells to exclude: ", paste(list.cell.ex, collapse = ", ")))
+    df_c %>% filter(position.cell_label %notin% list.cell.ex) -> df.c
+
+  }
+ 
+  # Protein concentration in uM (micro molar)
+  df.c[, paste0("mean.intensity.per.cell.", puncta.channel)] <- df.c[, paste0(puncta.channel,".mean.intensity.per.cell")]
+  ## Convert to concentration
+  df.c[, paste0("protein.conc.per.cell.", puncta.channel)] <- df.c[, paste0(puncta.channel,".mean.intensity.per.cell")]*factor_conc
+  
+  # Number of FL puncta per unit nuclear volume
+  df.c[, paste0("puncta.number.per.nuclear.vol.", puncta.channel)] <- (df.c[, paste0("number.of.", puncta.channel, ".puncta")]/df.c$cell.volume.um)*1000
+  
+  # FL “light phase”, {[Total FL intensity of the cell – Total puncta FL intensity of the same cell]/[nucleus volume – total volume of puncta per cell]}
+  df.c[, paste0("light.phase.intensity.", puncta.channel)] <- (df.c[, paste0(puncta.channel, ".integrated.intensity.outside.GFP.puncta")]/
+    (df.c$cell.volume.pix-df.c[ , paste0("total.", puncta.channel, ".puncta.puncta.volume.pix.per.nucleus")]))
+  ## Convert to concentration
+  df.c[, paste0("light.phase.conc.", puncta.channel)] <- df.c[, paste0("light.phase.intensity.", puncta.channel)]*factor_conc
+  
+  # Calculate Vp (average puncta vol.)
+  df.c[, paste0("avg.puncta.vol.", puncta.channel)] <- df.c[, paste0("average.", puncta.channel, ".puncta.puncta.volume.um.per.nucleus")]
+  
+  # Calculate puncta dense phase conc.
+  df.c[, paste0("puncta.dense.phase.intensity.", puncta.channel)] <- (df.c[, paste0(puncta.channel, ".mean.intensity.per.puncta")]/
+    df.c[ , paste0("number.of.", puncta.channel, ".puncta")])
+  ## Convert to concentration
+  df.c[, paste0("puncta.dense.phase.conc.", puncta.channel)] <- df.c[, paste0("puncta.dense.phase.intensity.", puncta.channel)]*factor_conc
+  
+  # Calculate partition coefficient & transfer free energy
+  RT = 0.002*temp # kcal/ mol
+  ## Kp=[DP]/[LP]
+  df.c[, paste0("Kp.", puncta.channel)] <- df.c[, paste0("puncta.dense.phase.conc.", puncta.channel)]/df.c[, paste0("light.phase.conc.", puncta.channel)] 
+  ## Transfer free energy
+  df.c[, paste0("DeltaGtr.", puncta.channel)] <- -RT*log(df.c[, paste0("Kp.", puncta.channel)])
+  
+  # Keep only the relevant features
+  cell.data <- df.c[, c("condition", "sample", "cell_label", 
+                        paste0("Mutual.information.", cell.channel, ".vs.", puncta.channel), 
+                        paste0("Pearson.correlation.", cell.channel, ".vs.", puncta.channel), 
+                        paste0("mean.intensity.per.cell.", puncta.channel),
+                        paste0("light.phase.intensity.", puncta.channel),
+                        paste0("puncta.dense.phase.intensity.", puncta.channel),
+                        paste0("protein.conc.per.cell.", puncta.channel), 
+                        paste0("puncta.number.per.nuclear.vol.", puncta.channel), 
+                        paste0("light.phase.conc.", puncta.channel), 
+                        paste0("avg.puncta.vol.", puncta.channel), 
+                        paste0("puncta.dense.phase.conc.", puncta.channel), 
+                        paste0("Kp.", puncta.channel), 
+                        paste0("DeltaGtr.", puncta.channel))] 
+  
+  #############################
+  # return the results
+  res=as.data.frame(cell.data)
+  
+  attr(res,"cell.channel") = cell.channel
+  attr(res,"puncta.channel") = puncta.channel
+  attr(res,"factor_conc") = factor_conc
+  attr(res,"temp") = temp
+  
+  return(res)
+
+} # END function
+```
+
+
+```{r}
+###############################
+##
+## Call the function with input files and arguments
+##
+###############################
+
+dir0 = "../../example_data/thermodynamic_characterization/" # define directory for the input files
+
+process.image.file(cell.data = read.csv(paste0(dir0, "cell_stats.csv")),
+           puncta.data = read.csv(paste0(dir0, "puncta_stats.csv")),
+           #cell.list.ex = read.csv(paste0(dir0, "cells_to_exclude.csv")), #(optional)
+           cell.channel = "Hoechst",
+           puncta.channel = "GFP", #c("GFP", "mCherry"),
+           factor_conc = 0.02, #c(0.02, 0.03)
+           temp = 310
+           )-> df 
+
+# Print the attributes
+attr(df, "cell.channel")
+attr(df, "puncta.channel")
+attr(df, "factor_conc")
+attr(df, "temp")
+```
+
+```{r}
+df %>% names()
+```
+
+
+```{r}
+levels(as.factor(df$condition))
+```
+
+
+```{r}
+#df %>% filter(condition=="NHX9")
+```
+
+
+```{r, fig.width=3.5, fig.height=3}
+library(ggplot2)
+library(cowplot)
+library(ggpubr)
+
+## provide a list of constructs, colors and shapes to plot
+list.constr<-c("NHX9", "NHX9_8FA", "NHX9_21FGAA")
+list.color<-c("darkgreen", "darkblue", "purple")
+list.shape<-c(24, 21, 23)
+
+plot1 <- list()
+for(nm in names(df)) {
+    plot1[[nm]] <- ggplot(data=df %>% filter(condition %in% list.constr)) + 
+      geom_point(aes_string(x="protein.conc.per.cell.GFP", y=nm, color="condition", 
+                            shape="condition", fill="condition"), alpha=0.5, size=2.) +
+      scale_color_manual(values=list.color) +
+      scale_fill_manual(values=list.color) +
+      scale_shape_manual(values=list.shape) +
+      xlab(expression("["~NHA9~constructs~"]"~"("~mu*M~")")) +
+      theme_cowplot(14) +
+      border()
+}
+```
+
+```{r, fig.width=3.5, fig.height=3}
+plot2 <- list()
+for(nm in names(df)) {
+    plot2[[nm]] <- ggplot(data=df %>% filter(condition %in% list.constr)) + 
+      geom_point(aes_string(x="protein.conc.per.cell.GFP", y=nm, color="condition", 
+                            shape="condition", fill="condition"), alpha=0.5, size=2.) +
+      scale_color_manual(values=list.color) +
+      scale_fill_manual(values=list.color) +
+      scale_shape_manual(values=list.shape) +
+      xlab(expression("["~NHA9~constructs~"]"~"("~mu*M~")")) +
+      theme_cowplot(14) +
+      border()
+}
+```
+
+```{r, fig.width=12, fig.height=6}
+library(patchwork)
+
+p1<-plot1[["puncta.number.per.nuclear.vol.GFP"]] + ylab(~"Puncta # (/"~10^3~mu*m^3~")") + scale_y_log10()
+p2<-plot1[["avg.puncta.vol.GFP"]] + ylab(V[p]~"("~mu*m^3~")") + scale_y_log10()
+p3<-plot1[["light.phase.conc.GFP"]] + ylab(~"[LP] ("~mu*M~")") + scale_y_log10(limits = c(0.02,110))
+p4<-plot1[["puncta.dense.phase.conc.GFP"]] + ylab(~"[DP] ("~mu*M~")") + scale_y_log10(limits = c(0.02,110))
+p5<-plot1[["Kp.GFP"]] + ylab(expression(K[p])) + scale_y_log10()
+p6<-plot2[["DeltaGtr.GFP"]] + ylab(expression(Delta~G^{tr}~"("~kcal~mol^{-1}~")"))
+
+(p1 | p2 | p3) / (p4 | p5 | p6) + 
+  plot_annotation(tag_levels = 'A') + 
+  plot_layout(guides = "collect")
+```
+
+
+
+
+
