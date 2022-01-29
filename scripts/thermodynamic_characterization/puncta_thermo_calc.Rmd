@@ -171,7 +171,8 @@ levels(as.factor(df$condition))
 
 
 ```{r}
-#df %>% filter(condition=="NHX9")
+# write the puncta features into an excel file
+write.xlsx(df, file = paste0(dir0, "puncta_thermo_features", ".xlsx"))
 ```
 
 
