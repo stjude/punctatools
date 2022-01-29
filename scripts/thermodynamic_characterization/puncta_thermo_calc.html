@@ -1793,7 +1793,8 @@ attr(df, &quot;cell.channel&quot;)</code></pre>
 <pre><code>##  [1] &quot;GFPempty&quot;      &quot;MIDI_21FGAA&quot;   &quot;MIDI_8FA&quot;      &quot;MIDI_AAG&quot;     
 ##  [5] &quot;MIDI_WT&quot;       &quot;NHX9&quot;          &quot;NHX9_21FGAA&quot;   &quot;NHX9_8FA&quot;     
 ##  [9] &quot;NHX9_AAG&quot;      &quot;NUPN&quot;          &quot;Untransfected&quot;</code></pre>
-<pre class="r"><code>#df %&gt;% filter(condition==&quot;NHX9&quot;)</code></pre>
+<pre class="r"><code># write the puncta features into an excel file
+write.xlsx(df, file = paste0(dir0, &quot;puncta_thermo_features&quot;, &quot;.xlsx&quot;))</code></pre>
 <pre class="r"><code>library(ggplot2)
 library(cowplot)
 library(ggpubr)</code></pre>
