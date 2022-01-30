@@ -7,7 +7,6 @@ output:
 
 ```{r}
 library(dplyr)
-library(openxlsx)
 `%notin%` <- Negate(`%in%`)
 ```
 
@@ -171,8 +170,8 @@ levels(as.factor(df$condition))
 
 
 ```{r}
-# write the puncta features into an excel file
-write.xlsx(df, file = paste0(dir0, "puncta_thermo_features", ".xlsx"))
+# write the puncta features into a .csv file
+write.csv(df, file = paste0(dir0, "puncta_thermo_features", ".csv"), row.names = F)
 ```
 
 
@@ -220,17 +219,17 @@ library(patchwork)
 
 p1<-plot1[["puncta.number.per.nuclear.vol.GFP"]] + ylab(~"Puncta # (/"~10^3~mu*m^3~")") + scale_y_log10()
 p2<-plot1[["avg.puncta.vol.GFP"]] + ylab(V[p]~"("~mu*m^3~")") + scale_y_log10()
-p3<-plot1[["light.phase.conc.GFP"]] + ylab(~"[LP] ("~mu*M~")") + scale_y_log10(limits = c(0.02,110))
-p4<-plot1[["puncta.dense.phase.conc.GFP"]] + ylab(~"[DP] ("~mu*M~")") + scale_y_log10(limits = c(0.02,110))
+p3<-plot1[["light.phase.conc.GFP"]] + ylab(~"[LP] ("~mu*M~")") + scale_y_log10()
+p4<-plot1[["puncta.dense.phase.conc.GFP"]] + ylab(~"[DP] ("~mu*M~")") + scale_y_log10()
 p5<-plot1[["Kp.GFP"]] + ylab(expression(K[p])) + scale_y_log10()
 p6<-plot2[["DeltaGtr.GFP"]] + ylab(expression(Delta~G^{tr}~"("~kcal~mol^{-1}~")"))
+
+png(file = paste0("../../docs/", "puncta_thermo", ".png"), width=12, height=6, units="in", res=300)
 
 (p1 | p2 | p3) / (p4 | p5 | p6) + 
   plot_annotation(tag_levels = 'A') + 
   plot_layout(guides = "collect")
+
+dev.off()
 ```
-
-
-
-
 
