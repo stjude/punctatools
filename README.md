@@ -95,6 +95,24 @@ Otherwise, go to step 3.
    
 <img src="docs/puncta.png" width="400">
 
+### 4. Thermodynamic characterization
+
+Use the provided R Markdown notebook [puncta_thermo_calc.Rmd](scripts/thermodynamic_characterization/puncta_thermo_calc.Rmd) 
+if you wish to calculate additional puncta and thermodynamic features from the output files 
+([puncta_stats.csv](example_data/thermodynamic_characterization/puncta_stats.csv) and 
+[cell_stats.csv](example_data/thermodynamic_characterization/cell_stats.csv) 
+from <strong>Step 3. Segment and quantify puncta</strong>) such as, 
+number of puncta, nuclear volume (x 10<sup>3</sup>), average puncta volume (**V<sub>p</sub>**), light phase (**[LP]**), 
+puncta dense phase (**[DP]**), partiton coefficient (**K<sub>p</sub> = [DP] / [LP]**) and transfer free energy 
+(**Δ G<sup>tr</sup> = - RT ln K<sub>p</sub>**). 
+**R** is the gas constant in (kcal/mol)/K and **T** is the temperature in Kelvin.  
+ 
+The [puncta_thermo_calc.Rmd](scripts/thermodynamic_characterization/puncta_thermo_calc.Rmd) 
+notebook should work with RStudio and R version 4.1.0.
+
+<img src="docs/puncta_thermo.png" width="900">
+
+
 ### Batch processing
 
 There are two options to run analysis in the batch mode.
@@ -118,19 +136,3 @@ is the json file with parameters generated after running the corresponding setup
 Example:
 
 ``python run_puncta_analysis.py -p parameters.json``
-
-### 4. Thermodynamic characterization
-
-Use the provided R Markdown notebook [puncta_thermo_calc.Rmd](scripts/thermodynamic_characterization/puncta_thermo_calc.Rmd) 
-if you wish to calculate additional puncta and thermodynamic features from the output files 
-([puncta_stats.csv](example_data/thermodynamic_characterization/puncta_stats.csv) and 
-[cell_stats.csv](example_data/thermodynamic_characterization/cell_stats.csv) 
-from <strong>Step 3. Segment and quantify puncta</strong>) such as, 
-puncta # (/ nuclear volume.$10^3$), average puncta volume ($V_p$), light phase ($[LP]$), 
-puncta dense phase ($[DP]$), partiton coefficient ($K_p = [DP]/[LP]$) and transfer free energy ($\Delta{G}^{tr} = -RT.lnK_p$). 
-$R$ is the gas constant in $(kcal/mol)/K$ and $T$ is the temperature in Kelvin.  
- 
-The [puncta_thermo_calc.Rmd](scripts/thermodynamic_characterization/puncta_thermo_calc.Rmd) 
-notebook should work with RStudio and R version 4.1.0.
-
-<img src="docs/puncta_thermo.png" width="900">
