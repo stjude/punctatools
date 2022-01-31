@@ -58,7 +58,7 @@ options("scipen"=100, "digits"=4)
 # source the R script
 
 library(devtools)
-devtools::source_url("https://github.com/stjude/punctatools/blob/main/library_2022_01_31.R?raw=TRUE")
+devtools::source_url("https://github.com/stjude/punctatools/blob/main/scripts/statistical_analysis/library.R?raw=TRUE")
 
 
 ### Run the function ###
