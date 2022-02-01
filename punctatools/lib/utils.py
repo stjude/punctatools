@@ -163,9 +163,10 @@ def show_imgs(imgs, channel_names, figsize=None):
                 io.imshow(imgs[i])
             plt.show()
         else:
-            plt.figure(figsize=(figsize, figsize))
-            io.imshow(imgs[0])
+            fig, axs = plt.subplots(1, 1, figsize=(figsize , figsize))
+            plt.sca(axs)
             plt.title(rf"{channel_names[0]}")
+            io.imshow(imgs[0])
             plt.show()
 
 
@@ -196,7 +197,9 @@ def display_blobs(ds, logblobs, channels=None, channel_names=None,
                 plt.title(rf"{channel_names[i]}: {blobname}")
             plt.show()
         else:
-            plt.figure(figsize=(figsize, figsize))
-            __plot_blobs(imgs[0], logblobs[0])
+            fig, axs = plt.subplots(1, 1, figsize=(figsize, figsize))
+            plt.sca(axs)
+            __plot_blobs(imgs[0], logblobs[0], axs)
+            plt.sca(axs)
             plt.title(rf"{channel_names[0]}: {blobname}")
             plt.show()
