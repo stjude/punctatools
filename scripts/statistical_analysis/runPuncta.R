@@ -11,10 +11,18 @@ rm(list=ls())
 #################################################################
 #####   Read in data  from GitHub site directly       ###
 
-library(readr)
 urlfile="https://raw.githubusercontent.com/stjude/punctatools/main/example_data/thermodynamic_characterization/puncta_thermo_features.csv"
-HEK.df <-read_csv(url(urlfile))
+HEK.df=read.csv(urlfile)
 HEK.df = data.frame(HEK.df)
+
+### Alternatively  ##
+
+# library(readr)
+# urlfile="https://raw.githubusercontent.com/stjude/punctatools/main/example_data/thermodynamic_characterization/puncta_thermo_features.csv"
+# HEK.df <-read_csv(url(urlfile))
+# HEK.df = data.frame(HEK.df)
+
+# subset the dataset
 
 HEK.sub = HEK.df[,c("condition",
                     "sample",
@@ -48,7 +56,7 @@ analysis.specs
 
 ######################################################################
 #################### Run puncta ######################################
-library(tidyverse)
+
 library(lme4)
 library(lmerTest)
 library(emmeans)
@@ -56,16 +64,20 @@ library(emmeans)
 options("scipen"=100, "digits"=4)
 
 # source the R script
+source("https://raw.githubusercontent.com/stjude/punctatools/main/scripts/statistical_analysis/library.R")
 
-library(devtools)
-devtools::source_url("https://github.com/stjude/punctatools/blob/main/scripts/statistical_analysis/library.R?raw=TRUE")
+# Alternatively
+
+# library(devtools)
+# devtools::source_url("https://github.com/stjude/punctatools/blob/main/scripts/statistical_analysis/library.R?raw=TRUE")
 
 
 ### Run the function ###
 
 cond.inc=c("NHX9","NHX9_21FGAA","NHX9_8FA")
 
-i=3
+for (i in 1:3)
+{
 fit0=try(puncta.stats(HEK.sub,
                       y.var=y.vars[i],
                       trans.name=y.trans[i],
@@ -73,5 +85,9 @@ fit0=try(puncta.stats(HEK.sub,
                       cond.var="condition",
                       tech.rep="sample",
                       y.count=y.cnt[i]))
-
-
+  
+   print(fit0$LSmean.table)  
+   print(fit0$estimate.table)  
+   print(fit0$anova.table)  
+   print(fit0$narrative)  
+}
