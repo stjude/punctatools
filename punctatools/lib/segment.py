@@ -36,6 +36,7 @@ def __get_images(dataset, do_3D, channel):
             raise ValueError("The image has multiples channels. Provide channel to segment.")
     else:
         imgs = dataset['image'].data
+    # imgs = rescale_intensity(np.array(imgs))
     if 'z' not in dataset.dims:
         imgs = [imgs]
     if do_3D:
@@ -144,7 +145,10 @@ def segment_roi(dataset, channel=None, do_3D=False,
         Segmented image or input with segmented image
     """
     imgs, anisotropy, channels = __get_images(dataset, do_3D, channel)
-    imgs = [rescale_intensity(np.array(img)) for img in imgs]
+    if len(imgs) > 1:
+        imgs = [img for img in rescale_intensity(np.array(imgs))]
+    else:
+        imgs = [rescale_intensity(np.array(img)) for img in imgs]
 
     model = models.Cellpose(gpu=gpu, model_type=model_type)
     masks, flows, styles, diams = model.eval(imgs, anisotropy=anisotropy,
@@ -161,6 +165,9 @@ def segment_roi(dataset, channel=None, do_3D=False,
                          clear_border=clear_border)
     if show_cellpose_debug:
         flows = np.array([flows[i][0] for i in range(len(flows))])
+        if do_3D:
+            imgs = imgs[0]
+            flows = flows[0]
         display_cellpose_results(imgs, masks, flows, channels, is_3d='z' in dataset.dims)
     if add_to_input:
         masks = __add_segmentation_to_image(dataset['image'].data, masks)
