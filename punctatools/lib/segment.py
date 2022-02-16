@@ -425,8 +425,9 @@ def segment_puncta(dataset, channel=None, roi=None, minsize_um=0.2, maxsize_um=2
                         threshold=threshold_detection)
 
     # calculate background image
-    bg_img = calculate_background_image(img, roi, global_background,
-                                        global_background_percentile, background_percentile)
+    bg_img = calculate_background_image(img, roi, global_background=True,
+                                        global_background_percentile=global_background_percentile,
+                                        background_percentile=background_percentile)
 
     # convert the blob centers to watershed markers, filter by background
     markers = centers_to_markers(logblobs, img, bg_img, threshold_background)
