@@ -15,6 +15,7 @@ setup(
     test_suite='punctatools.tests',
 
     install_requires=[
+        'setuptools>=18.5,<=57.5.0',
         'cellpose',
         'ipykernel',
         'scipy',
