@@ -4,6 +4,7 @@ import punctatools
 setup(
     name='punctatools',
     version=punctatools.__version__,
+    url='/https://github.com/stjude/punctatools',
     author="Anna Medyukhina",
     author_email='anna.medyukhina@gmail.com',
     packages=['punctatools',
