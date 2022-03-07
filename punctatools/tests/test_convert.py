@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 import unittest
 
 import intake_io
@@ -9,6 +10,7 @@ from ddt import ddt, data
 from ..lib.convert import load_random_dataset, images_to_stacks, check_metadata, get_number_of_stacks
 
 INPUT_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../example_data/slices'
+TMP_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../tmp/' + str(time.time())
 
 
 @ddt
@@ -36,13 +38,12 @@ class TestConversion(unittest.TestCase):
         True, False
     )
     def test_convert(self, parallel):
-        dir_out = 'tmp_out'
-        images_to_stacks(INPUT_DIR, dir_out, spacing=(0.2, None, None), parallel=parallel)
-        files = os.listdir(dir_out)
+        images_to_stacks(INPUT_DIR, TMP_DIR, spacing=(0.2, None, None), parallel=parallel)
+        files = os.listdir(TMP_DIR)
         self.assertEqual(len(files), 2)
-        dataset = intake_io.imload(os.path.join(dir_out, files[0]))
+        dataset = intake_io.imload(os.path.join(TMP_DIR, files[0]))
         self.assertSequenceEqual(list(np.round(intake_io.get_spacing(dataset), 2)), [0.2, 0.11, 0.11])
-        shutil.rmtree(dir_out)
+        shutil.rmtree(TMP_DIR)
 
 
 if __name__ == '__main__':

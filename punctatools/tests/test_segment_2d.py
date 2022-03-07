@@ -1,12 +1,11 @@
 import os
-import shutil
 import unittest
 
 import intake_io
 from am_utils.utils import walk_dir
-from ddt import ddt
+from ddt import ddt, data
 
-from ..lib.segment import segment_roi, segment_puncta, segment_puncta_batch
+from ..lib.segment import segment_roi, segment_puncta
 
 INPUT_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../example_data/slices'
 
@@ -14,14 +13,12 @@ INPUT_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../example_data/sl
 @ddt
 class TestSegmentation(unittest.TestCase):
 
-    def test_segment_cells(self):
+    @data(
+        True, False
+    )
+    def test_segment_cells(self, clear_border):
         img = intake_io.imload(walk_dir(INPUT_DIR)[0])
-        mask = segment_roi(img, remove_small_mode='2D')
-        self.assertGreater(mask.max(), 0)
-
-    def test_segment_cells_clear_border(self):
-        img = intake_io.imload(walk_dir(INPUT_DIR)[0])
-        mask = segment_roi(img, remove_small_mode='2D', clear_border=True)
+        mask = segment_roi(img, remove_small_mode='2D', clear_border=clear_border)
         self.assertGreater(mask.max(), 0)
 
     def test_segment_puncta(self):
@@ -34,15 +31,6 @@ class TestSegmentation(unittest.TestCase):
                                 segmentation_mode=1, maxrad_um=6,
                                 remove_out_of_roi=False)
         self.assertGreater(puncta.max(), 0)
-
-    def test_segment_puncta_batch(self):
-        segment_puncta_batch(INPUT_DIR, 'tmp_out/puncta', puncta_channels=[0],
-                             parallel=True,
-                             minsize_um=0.2, maxsize_um=2, num_sigma=5,
-                             overlap=1, threshold_detection=0.001, threshold_background=3,
-                             threshold_segmentation=0.0003,
-                             segmentation_mode=0)
-        shutil.rmtree('tmp_out')
 
 
 if __name__ == '__main__':

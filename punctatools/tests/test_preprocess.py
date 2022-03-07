@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 import unittest
 
 import intake_io
@@ -11,27 +12,26 @@ from ddt import ddt, data
 from ..lib.preprocess import compute_histogram_batch, subtract_background, subtract_background_batch
 
 INPUT_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../example_data/stacks'
+TMP_DIR = os.path.dirname(os.path.abspath(__file__)) + '/../../tmp/' + str(time.time())
 
 
 @ddt
 class TestConversion(unittest.TestCase):
 
     def test_histogram(self):
-        dir_out = 'tmp_out'
-        compute_histogram_batch(INPUT_DIR, dir_out + '/hist')
-        self.assertEqual(len(os.listdir(dir_out + '/hist')), 2)
-        self.assertGreater(len(pd.read_csv(dir_out + '/hist.csv')), 0)
-        shutil.rmtree(dir_out)
+        compute_histogram_batch(INPUT_DIR, TMP_DIR + '/hist')
+        self.assertEqual(len(os.listdir(TMP_DIR + '/hist')), 2)
+        self.assertGreater(len(pd.read_csv(TMP_DIR + '/hist.csv')), 0)
+        shutil.rmtree(TMP_DIR)
 
     @data(
         100,
         [100, 30, 70]
     )
     def test_bg_subtraction_batch(self, bg_value):
-        dir_out = 'tmp_out'
-        subtract_background_batch(INPUT_DIR, dir_out, bg_value)
-        self.assertEqual(len(os.listdir(dir_out)), 2)
-        shutil.rmtree(dir_out)
+        subtract_background_batch(INPUT_DIR, TMP_DIR, bg_value)
+        self.assertEqual(len(os.listdir(TMP_DIR)), 2)
+        shutil.rmtree(TMP_DIR)
 
     @data(
         50,
