@@ -34,11 +34,8 @@ class TestConversion(unittest.TestCase):
         dataset = load_random_dataset(INPUT_DIR, spacing=(0.2, None, None))
         self.assertSequenceEqual(list(np.round(intake_io.get_spacing(dataset), 2)), [0.2, 0.11, 0.11])
 
-    @data(
-        True, False
-    )
     def test_convert(self, parallel):
-        images_to_stacks(INPUT_DIR, TMP_DIR, spacing=(0.2, None, None), parallel=parallel)
+        images_to_stacks(INPUT_DIR, TMP_DIR, spacing=(0.2, None, None), parallel=True)
         files = os.listdir(TMP_DIR)
         self.assertEqual(len(files), 2)
         dataset = intake_io.imload(os.path.join(TMP_DIR, files[0]))
