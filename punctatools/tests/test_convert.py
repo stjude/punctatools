@@ -40,7 +40,7 @@ class TestConversion(unittest.TestCase):
         self.assertEqual(len(files), 2)
         dataset = intake_io.imload(os.path.join(TMP_DIR, files[0]))
         self.assertSequenceEqual(list(np.round(intake_io.get_spacing(dataset), 2)), [0.2, 0.11, 0.11])
-        shutil.rmtree(TMP_DIR)
+        shutil.rmtree(TMP_DIR, ignore_errors=True)
 
 
 if __name__ == '__main__':
