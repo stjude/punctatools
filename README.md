@@ -102,9 +102,10 @@ if you wish to calculate additional puncta and thermodynamic features from the o
 ([puncta_stats.csv](example_data/thermodynamic_characterization/puncta_stats.csv) and 
 [cell_stats.csv](example_data/thermodynamic_characterization/cell_stats.csv) 
 from <strong>Step 3. Segment and quantify puncta</strong>) such as, 
-number of puncta, nuclear volume (x 10<sup>3</sup>), average puncta volume (**V<sub>p</sub>**), light phase (**[LP]**), 
-puncta dense phase (**[DP]**), partiton coefficient (**K<sub>p</sub> = [DP] / [LP]**) and transfer free energy 
-(**Δ G<sup>tr</sup> = - RT ln K<sub>p</sub>**). 
+number of puncta, nuclear volume (x 10<sup>3</sup>), average puncta volume (**V<sub>p</sub>**), mole fraction (**F<sub>mol</sub>**), 
+volume fraction (**F<sub>mol</sub>**), light phase (**[LP]**), puncta dense phase (**[DP]**), 
+partiton coefficient (**K<sub>p</sub> = [DP] / [LP]**) and transfer free energy 
+(**Δ G<sub>Tr</sub> = - RT ln K<sub>p</sub>**). 
 **R** is the gas constant in (kcal/mol)/K and **T** is the temperature in Kelvin.  
  
 The [puncta_thermo_calc.Rmd](scripts/thermodynamic_characterization/puncta_thermo_calc.Rmd) 
