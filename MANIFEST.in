@@ -1,6 +1,6 @@
 include README.md
 include LICENSE
-include docs
-include notebooks
-include scripts
-include example_data
+include docs *.png
+include notebooks *.ipynb
+include scripts *.py *.ijm *.Rmd *.R
+include example_data *.tif *.csv
