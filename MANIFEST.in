@@ -1,0 +1,6 @@
+include README.md
+include LICENSE
+include docs
+include notebooks
+include scripts
+include example_data
