@@ -1,6 +1,0 @@
-include README.md
-include LICENSE
-recursive-include docs *.png
-recursive-include notebooks *.ipynb
-recursive-include scripts *.py *.ijm *.Rmd *.R
-recursive-include example_data *.tif *.csv
