@@ -1,5 +1,6 @@
 name: punctatools
 channels:
+  - conda-forge
   - defaults
 dependencies:
   - python>=3.7,<=3.9
