@@ -138,3 +138,8 @@ is the json file with parameters generated after running the corresponding setup
 Example:
 
 ``python run_puncta_analysis.py -p parameters.json``
+
+## Issues
+
+If you encounter any issues or bugs, or have a feature request, please open an issue in the [Issues](https://github.com/stjude/punctatools/issues) tab.
+
