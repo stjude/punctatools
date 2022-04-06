@@ -98,12 +98,13 @@ Otherwise, go to step 3.
 
 ### 4. Thermodynamic characterization
 
-Use the provided R Markdown notebook [puncta_thermo_calc.Rmd](scripts/thermodynamic_characterization/puncta_thermo_calc.Rmd) 
-if you wish to calculate additional puncta and thermodynamic features from the output files 
-([puncta_stats.csv](example_data/thermodynamic_characterization/puncta_stats.csv) and 
-[cell_stats.csv](example_data/thermodynamic_characterization/cell_stats.csv) 
-from <strong>Step 3. Segment and quantify puncta</strong>) such as, 
-number of puncta, nuclear volume (x 10<sup>3</sup>), average puncta volume (**V<sub>p</sub>**), mole fraction (**F<sub>mol</sub>**), 
+If you wish to calculate additional puncta and thermodynamic features from the output files 
+([puncta_quants.csv](example_data/thermodynamic_characterization/puncta_quants.csv) and 
+[cell_quants.csv](example_data/thermodynamic_characterization/cell_quants.csv) 
+from <strong>Step 3. Segment and quantify puncta</strong>), 
+use the provided R Markdown notebook [puncta_thermo_calc.Rmd](scripts/thermodynamic_characterization/puncta_thermo_calc.Rmd). 
+The notebook calculates the number of puncta, nuclear volume (x 10<sup>3</sup>), average puncta volume (**V<sub>p</sub>**),
+mole fraction (**F<sub>mol</sub>**), 
 volume fraction (**F<sub>mol</sub>**), light phase (**[LP]**), puncta dense phase (**[DP]**), 
 partiton coefficient (**K<sub>p</sub> = [DP] / [LP]**) and transfer free energy 
 (**Δ G<sub>Tr</sub> = - RT ln K<sub>p</sub>**). 
