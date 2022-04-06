@@ -78,7 +78,7 @@ Follow this step if you wish to quantify puncta in individual ROIs (cells / nucl
  and your images contain a channel with a fluorescent label specific to this region of interest.
 Otherwise, go to step 3.
 
-1. Set up the parameter of the cell segmentation with the 
+1. Set up the [parameters](docs/parameters.md#list-of-parameters-for-ROI-segmentation) of the cell segmentation with the 
     [setup_roi_segmentation.ipynb](notebooks/setup_roi_segmentation.ipynb) notebook. 
     Follow the instructions in the notebook.
 2. Segment the entire dataset with the [run_roi_segmentation.ipynb](notebooks/run_roi_segmentation.ipynb) 
@@ -88,7 +88,7 @@ Otherwise, go to step 3.
 
 ### 3. Segment and quantify puncta
 
-1. Set up the parameter of the puncta analysis with the 
+1. Set up the [parameters](docs/parameters.md#list-of-parameters-for-puncta-segmentation-and-analysis) of the puncta analysis with the 
     [setup_puncta_analysis.ipynb](notebooks/setup_puncta_analysis.ipynb) notebook. 
     Follow the instructions in the notebook.
 2. Analyze the entire dataset with the [run_puncta_analysis.ipynb](notebooks/run_puncta_analysis.ipynb) 
