@@ -20,7 +20,7 @@ Mutual information [Fl] vs [Fl*] |	Mutual information between each pair of fluor
 
 
 
-## Measurements for individual ROIs (cells or nuclei)
+## Measurements for individual ROI
 
 | **Measurement** |	**Definition** |
 |-----|-----|
