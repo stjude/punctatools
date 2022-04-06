@@ -92,7 +92,7 @@ Otherwise, go to step 3.
     [setup_puncta_analysis.ipynb](notebooks/setup_puncta_analysis.ipynb) notebook. 
     Follow the instructions in the notebook.
 2. Analyze the entire dataset with the [run_puncta_analysis.ipynb](notebooks/run_puncta_analysis.ipynb) 
-     notebook.
+     notebook. This will generate quantification for [individual puncta](docs/outputs.md#Measurements for individual puncta) and [individual ROI](docs/outputs.md#Measurements for individual ROI).
    
 <img src="docs/puncta.png" width="400">
 
