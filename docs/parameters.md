@@ -1,4 +1,6 @@
-## List of parameters for ROI segmentation ([setup_roi_segmentation.ipynb](../notebooks/setup_roi_segmentation.ipynb))
+## List of parameters for ROI segmentation
+
+Use the [setup_roi_segmentation.ipynb](../notebooks/setup_roi_segmentation.ipynb) notebook to adjust these parameters
 
 
 | **Parameter**	| **Definition** |	**Recommended Initial Value** |	**Notes**
@@ -17,7 +19,9 @@
 |parameter_ file |	File name used to save the parameter values |	parameters.json |	May include a complete path, or only a file name. If only a file name without path is provided, the file will be saved in the directory of the notebook|
 
 
-## List of parameters for puncta segmentation and analysis ([setup_puncta_analysis.ipynb](../notebooks/setup_puncta_analysis.ipynb))
+## List of parameters for puncta segmentation and analysis 
+
+Use the [setup_puncta_analysis.ipynb](../notebooks/setup_puncta_analysis.ipynb) notebook to adjust these parameters
 
 | **Parameter**	| **Definition** |	**Recommended Initial Value** |	**Notes**
 |-----|-----|-----|-----|
