@@ -1,4 +1,4 @@
-##	ROI segmentation:
+##	ROI segmentation
 
 ROI segmentation is done using [cellpose](https://github.com/mouseland/cellpose) 
 and is done either in a 3D mode or 2D mode, depending on the user choice. 

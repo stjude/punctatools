@@ -1,4 +1,4 @@
-##	Puncta segmentation:
+##	Puncta segmentation
 
 The puncta segmentation procedure consists of the following steps: 
 
