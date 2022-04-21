@@ -39,7 +39,7 @@ ROI volume um |	Volume of the ROI in µm3 (or area in µm2, for 2D images)
 Pearson correlation coefficient [Fl] vs [Fl*]	| Pearson correlation coefficient between each pair of fluorescent channels [Fl] and [Fl*] inside the ROI
 Pearson correlation p value [Fl] vs [Fl*] |	p-value for the Pearson correlation coefficient between each pair of fluorescent channels [Fl] and [Fl*] inside the ROI
 Mutual information [Fl] vs [Fl*] |	Mutual information between each pair of fluorescent channels [Fl] and [Fl*] inside the ROI
-number of [P] puncta |	Number of puncta detected in the [P] channel and assigned to the current ROI. This will correspond to the puncta measurements from puncta_stats.csv with matching “Image name” and “cell label” values and “channel”=[P]. Calculated for each channel [P] specified as puncta channel
+number of [P] puncta |	Number of puncta detected in the [P] channel and assigned to the current ROI. This will correspond to the individual puncta measurements (Table above) with matching “Image name” and “cell label” values and “channel”=[P]. Calculated for each channel [P] specified as puncta channel
 average [P] puncta volume pix per ROI |	Average volume in pixels of puncta detected from channel [P] in the current ROI
 average [P] puncta volume um per ROI |	Average volume in µm3 (or area in µm2, for 2D images) of puncta detected from channel [P] in the current ROI
 total [P] puncta volume pix per ROI |	Total volume in pixels of puncta detected from channel [P] in the current ROI
