@@ -16,6 +16,7 @@ setup(
     test_suite='punctatools.tests',
 
     install_requires=[
+        'pyvcf<=0.4.3',
         'cellpose',
         'ipykernel',
         'scipy',
