@@ -15,6 +15,7 @@ dependencies:
   - bokeh<2.5.0,>=2.4.0
   - holoviews
   - jupyter
+  - pyvcf
   - pip
   - pip:
     - cellpose
