@@ -142,5 +142,18 @@ Example:
 
 ## Issues
 
-If you encounter any issues or bugs, or have a feature request, please open an issue in the [Issues](https://github.com/stjude/punctatools/issues) tab.
+If you encounter any bugs or have a feature request, please open an [Issue](https://github.com/stjude/punctatools/issues).
+
+If you have a question, you may ask it [here](https://github.com/stjude/punctatools/discussions)
+
+## Citation
+
+If you find this package useful, please cite:
+
+> David W. Baggett, Anna Medyukhina, Swarnendu Tripathi, Hazheen K. Shirnekhi, 
+> Huiyun Wu, Stanley B. Pounds, Khaled Khairy and Richard Kriwacki. 
+> *An Image Analysis Pipeline for Quantifying the Features of Fluorescently-Labeled Biomolecular Condensates in Cells*.
+> Frontiers in Bioinformatics (2022) 
+> [https://doi.org/10.3389/fbinf.2022.897238](https://doi.org/10.3389/fbinf.2022.897238)
+
 
