@@ -1,0 +1,11 @@
+{
+    "input_dir": "../example_data/slices",
+    "output_dir": "../test_output/stacks",
+    "spacing": [
+        0.2,
+        0.11000000110000001,
+        0.11000000110000001
+    ],
+    "channel_code": "_C",
+    "z_position_code": "_Z"
+}
