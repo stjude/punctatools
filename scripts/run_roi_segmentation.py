@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 
 from punctatools.lib.segment import segment_roi_batch
 
@@ -20,6 +21,10 @@ if __name__ == '__main__':
         params['input_dir'] = args.input_dir.rstrip('/')
     if args.output_dir is not None:
         params['output_dir'] = args.output_dir.rstrip('/')
+
+    os.makedirs(params['output_dir'], exist_ok=True)
+    with open(os.path.join(params['output_dir'], '..', parameter_file.split('/')[-1]), 'w') as f:
+        json.dump(params, f, indent=4)
 
     print('\nThe following parameters will be used for segmentation:')
     print(params)
