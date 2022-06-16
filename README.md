@@ -13,27 +13,24 @@ To quantify puncta properties per cell, we use [Cellpose](https://github.com/mou
 
 ## Installation
 
-**Option 1:**
+**Option 1: conda installation**
 
-1. Download the latest version of the package
-2. cd into the package directory
-3. Install the package by running `pip install .`
-    
-You can install the punctatools into your base python environment, but we recommend creating 
-a new [anaconda](https://docs.anaconda.com/anaconda/install/) 
-or [mamba](https://github.com/mamba-org/mamba) environment. 
-
-This installation should work with python versions 3.7-3.9.
-
-**Option 2:**
-
-Create a new conda environment with all dependencies from the provided yml file: 
+Create a new conda environment with punctatools and all dependencies from the provided yml file: 
    
-`conda env create -f punctatools.yml`
+``conda env create -f punctatools.yml``
 
 To overwrite an old environment with the same name, run the above command with the `--force` flag:
 
-`conda env create -f punctatools.yml --force`
+``conda env create -f punctatools.yml --force``
+
+**Option 2: pip installation**
+
+1. Create and activate a new [anaconda](https://docs.anaconda.com/anaconda/install/) 
+   environment (optional): 
+   ``conda create -n punctatools python=3.9; conda activate punctatools``
+2. Install the punctatools package and dependencies:
+    ``pip install git+https://github.com/stjude/punctatools.git@v0.1.1``
+
 
 ## Requirements
 
