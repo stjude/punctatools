@@ -1,0 +1,13 @@
+{
+    "input_dir": "../example_data/stacks",
+    "output_dir": "../test_output/roi",
+    "channel": 0,
+    "diameter": 120,
+    "model_type": "cyto",
+    "do_3D": false,
+    "remove_small_mode": "2D",
+    "remove_small_diam_fraction": 0.5,
+    "flow_threshold": 0.4,
+    "cellprob_threshold": 0,
+    "gpu": true
+}

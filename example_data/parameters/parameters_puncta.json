@@ -1,0 +1,39 @@
+{
+    "input_dir": "../example_data/stacks",
+    "output_dir": "../test_output/puncta_analysis",
+    "roi_segmentation": false,
+    "puncta_segm_dir": "puncta_segm",
+    "puncta_quant_dir": "puncta_quants",
+    "roi_quant_dir": "cell_quants",
+    "puncta_channels": [
+        1,
+        2
+    ],
+    "channel_names": [
+        "ch0",
+        "ch1",
+        "ch3"
+    ],
+    "minsize_um": 0.2,
+    "maxsize_um": 2,
+    "num_sigma": 5,
+    "overlap": 1,
+    "threshold_detection": [
+        0.001,
+        0.0001
+    ],
+    "threshold_background": [
+        2,
+        1.5
+    ],
+    "global_background": false,
+    "global_background_percentile": 95,
+    "background_percentile": 50,
+    "threshold_segmentation": [
+        0.001,
+        0.0003
+    ],
+    "segmentation_mode": 0,
+    "remove_out_of_roi": false,
+    "maxrad_um": null
+}

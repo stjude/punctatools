@@ -1,29 +1,33 @@
 import argparse
+import json
+import os
 
 from punctatools.lib.segment import segment_roi_batch
-from punctatools.lib.utils import load_parameters
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--parameter-file', type=str, help='json file with parameters', required=True)
+    parser.add_argument('-i', '--input-dir', type=str, default=None,
+                        help='folder with images to be converted')
+    parser.add_argument('-o', '--output-dir', type=str, default=None,
+                        help='folder to save results')
     args = parser.parse_args()
     parameter_file = args.parameter_file
 
-    param_keys = ['diameter',
-                  'model_type',
-                  'do_3D',
-                  'remove_small_mode',
-                  'remove_small_diam_fraction',
-                  'flow_threshold',
-                  'cellprob_threshold',
-                  'gpu']
-    param_matches = dict(input_dir='converted_data_dir',
-                         output_dir='roi_segmentation_dir',
-                         channel='roi_channel')
-    kwargs = load_parameters(vars(), param_keys, param_matches)
+    with open(parameter_file) as f:
+        params = json.load(f)
 
-    print('\nThe following are the parameters that will be used:')
-    print(kwargs)
+    if args.input_dir is not None:
+        params['input_dir'] = args.input_dir.rstrip('/')
+    if args.output_dir is not None:
+        params['output_dir'] = args.output_dir.rstrip('/')
+
+    os.makedirs(params['output_dir'], exist_ok=True)
+    with open(os.path.join(params['output_dir'], '..', parameter_file.split('/')[-1]), 'w') as f:
+        json.dump(params, f, indent=4)
+
+    print('\nThe following parameters will be used for segmentation:')
+    print(params)
     print('\n')
 
-    segment_roi_batch(**kwargs)
+    segment_roi_batch(**params)
