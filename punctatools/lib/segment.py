@@ -270,7 +270,7 @@ def segment_roi_batch(input_dir: str, output_dir: str, channel: int, **kwargs):
         intake_io.imsave(output, output_dir + fn)
 
 
-def __filter_laplace(img, minsize_um, maxsize_um, num_sigma, spacing):
+def filter_laplace(img, minsize_um, maxsize_um, num_sigma, spacing):
     laplace = np.zeros(img.shape, dtype=np.float32)
     for sigma in np.linspace(minsize_um, maxsize_um, int(num_sigma), endpoint=True):
         gauss = filters.gaussian(img, sigma=sigma / spacing)
@@ -312,10 +312,10 @@ def threshold_puncta(img, bg_img, roi, minsize_um, maxsize_um, num_sigma, spacin
                      segmentation_mode, threshold_segmentation,
                      global_background=True, global_background_percentile=95., background_percentile=50.):
     if segmentation_mode == 0:
-        intensity_image = __filter_laplace(img, minsize_um, maxsize_um, num_sigma, spacing)
+        intensity_image = filter_laplace(img, minsize_um, maxsize_um, num_sigma, spacing)
         bg_img = np.ones_like(bg_img)
     elif segmentation_mode == 1:
-        intensity_image = __filter_laplace(img, minsize_um, maxsize_um, num_sigma, spacing)
+        intensity_image = filter_laplace(img, minsize_um, maxsize_um, num_sigma, spacing)
         bg_img = calculate_background_image(intensity_image, roi,
                                             global_background=global_background,
                                             global_background_percentile=global_background_percentile,

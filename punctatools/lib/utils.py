@@ -83,7 +83,7 @@ def convert_params(nchannels, channel, *params):
 def crop_dataset(dataset, x, y, z, width, height, depth):
     sp = intake_io.get_spacing(dataset)[-1]
 
-    ds_crop = dataset.copy()
+    ds_crop = dataset.copy(deep=True)
 
     if x is not None and width is not None:
         ds_crop = ds_crop.loc[dict(x=slice(x * sp, (x + width - 1) * sp))]
