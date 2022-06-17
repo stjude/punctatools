@@ -43,7 +43,7 @@ To overwrite an old environment with the same name, run the above command with t
 
 ### 1. Prepare the images for analysis
 
-Images must organized into z-stacks by combining all channels and z-layers from the same field-of-view.
+Images must be organized into z-stacks by combining all channels and z-layers from the same field-of-view.
 
 **Option 1:**  If the acquisition software allow, creates a single z-stack per acquisition, 
 which  combines all fluorescent channels into separate layers. 
