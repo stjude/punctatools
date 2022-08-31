@@ -92,7 +92,9 @@ def __compute_volume_shape_position(labels, spacing, name, img=None, img_name=''
         stats = stats.rename(columns={'mean_intensity': img_name})
     stats[rf'{name} volume um'] = stats[rf'{name} volume pix'] * np.prod(spacing)
 
-    surf_area = [mesh_surface_area(*marching_cubes(labels == lb, level=None, spacing=spacing)[:2])
+    surf_area = [mesh_surface_area(*marching_cubes(np.pad(labels, 1,
+                                                          constant_values=0) == lb,
+                                                   level=None, spacing=spacing)[:2])
                  for lb in np.unique(labels)[1:]]
     stats['sphericity'] = sphericity(np.array(surf_area), stats[rf'{name} volume um'])
     return stats
