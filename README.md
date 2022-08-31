@@ -29,7 +29,7 @@ To overwrite an old environment with the same name, run the above command with t
    environment (optional): 
    ``conda create -n punctatools python=3.9; conda activate punctatools``
 2. Install the punctatools package and dependencies:
-    ``pip install git+https://github.com/stjude/punctatools.git@v0.1.1``
+    ``pip install git+https://github.com/stjude/punctatools.git@v0.2.0``
 
 
 ## Requirements
