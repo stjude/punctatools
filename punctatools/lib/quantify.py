@@ -7,7 +7,7 @@ from am_utils.parallel import run_parallel
 from am_utils.utils import walk_dir, combine_statistics
 from scipy import ndimage
 from scipy.stats import entropy, pearsonr
-from skimage.measure import regionprops_table
+from skimage.measure import regionprops_table, marching_cubes, mesh_surface_area
 from skimage.segmentation import relabel_sequential
 from tqdm import tqdm
 
@@ -51,6 +51,13 @@ def mutual_information_2d(x, y, bins=256):
     return mi
 
 
+def sphericity(area, volume):
+    """
+    Sphericity calculation as in https://en.wikipedia.org/wiki/Sphericity
+    """
+    return np.pi**(1./3) * (6 * volume)**(2./3) / area
+
+
 def __get_data(dataset, channel_names, puncta_channels):
     imgs = dataset['image'].data[:len(channel_names)]
     if len(dataset['image'].data) >= len(channel_names) + len(puncta_channels):
@@ -64,7 +71,7 @@ def __get_data(dataset, channel_names, puncta_channels):
     return imgs, roi, puncta
 
 
-def __compute_volume_and_position(labels, spacing, name, img=None, img_name=''):
+def __compute_volume_shape_position(labels, spacing, name, img=None, img_name=''):
     properties = ['label', 'area', 'centroid']
     if img is not None:
         properties += ['mean_intensity']
@@ -84,6 +91,12 @@ def __compute_volume_and_position(labels, spacing, name, img=None, img_name=''):
     if img is not None:
         stats = stats.rename(columns={'mean_intensity': img_name})
     stats[rf'{name} volume um'] = stats[rf'{name} volume pix'] * np.prod(spacing)
+
+    surf_area = [mesh_surface_area(*marching_cubes(np.pad(labels, 1,
+                                                          constant_values=0) == lb,
+                                                   level=None, spacing=spacing)[:2])
+                 for lb in np.unique(labels)[1:]]
+    stats['sphericity'] = sphericity(np.array(surf_area), stats[rf'{name} volume um'])
     return stats
 
 
@@ -141,7 +154,7 @@ def __summarize_puncta_quantifications(roi_quant, puncta_quant, puncta_channel):
         current_cell = puncta_quant[puncta_quant['ROI label'] == roi_quant['ROI label'].iloc[i]]
         roi_quant.at[i, rf'number of {puncta_channel} puncta'] = len(current_cell)
 
-        for col in ['puncta volume um', 'puncta volume pix', 'distance to ROI border um']:
+        for col in ['puncta volume um', 'puncta volume pix', 'distance to ROI border um', 'sphericity']:
             colname = rf"average {puncta_channel} puncta {col} per ROI"
             colname = colname.replace('puncta puncta', 'puncta')
             if len(current_cell) > 0:
@@ -202,7 +215,7 @@ def quantify(dataset, channel_names, puncta_channels):
     imgs, roi, puncta = __get_data(dataset, channel_names, puncta_channels)
 
     # compute cell volume and positions
-    roi_quant = __compute_volume_and_position(roi, spacing, 'ROI')
+    roi_quant = __compute_volume_shape_position(roi, spacing, 'ROI')
 
     # compute intensities of all channels per cell
     for i in range(len(channel_names)):
@@ -239,8 +252,8 @@ def quantify(dataset, channel_names, puncta_channels):
     puncta_quant_all = pd.DataFrame()
     for p_i in range(len(puncta_channels)):
         # compute volume and positions of puncta
-        puncta_quant = __compute_volume_and_position(puncta[p_i], spacing, 'puncta',
-                                                     img=dist_to_border, img_name='distance to ROI border um')
+        puncta_quant = __compute_volume_shape_position(puncta[p_i], spacing, 'puncta',
+                                                       img=dist_to_border, img_name='distance to ROI border um')
         puncta_quant = __add_roi_label(puncta_quant, roi)
 
         # compute intensities of all channels per puncta
