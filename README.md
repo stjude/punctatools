@@ -17,7 +17,7 @@ To quantify puncta properties per cell, we use [Cellpose](https://github.com/mou
 
 Create a new conda environment with punctatools and all dependencies from the provided yml file: 
    
-``conda env create -f punctatools.yml``
+``conda env create -f punctatools.yaml``
 
 To overwrite an old environment with the same name, run the above command with the `--force` flag:
 
